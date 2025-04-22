@@ -60,7 +60,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="flex items-center space-x-2 mb-4">
             <span className="text-2xl font-bold">₹{product.discountedPrice || product.price}</span>
             {product.discountedPrice && <span className="text-gray-500 line-through text-lg">₹{product.price}</span>}
-            {product.discount > 0 && (
+            {product.discount && product.discount > 0 && (
               <span className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 text-sm px-2 py-0.5 rounded">
                 {product.discount}% OFF
               </span>

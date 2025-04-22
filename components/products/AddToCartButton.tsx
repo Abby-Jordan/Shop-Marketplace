@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Plus, Minus, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import type { Product, ProductSize } from "@/types/product"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
@@ -43,7 +43,7 @@ export default function AddToCartButton({ product }: AddToCartButtonProps) {
           <RadioGroup
             value={selectedSize?.value || ""}
             onValueChange={(value) => {
-              const size = product.sizes.find((s) => s.value === value)
+              const size = product.sizes?.find((s) => s.value === value)
               setSelectedSize(size || null)
             }}
             className="flex flex-wrap gap-3"

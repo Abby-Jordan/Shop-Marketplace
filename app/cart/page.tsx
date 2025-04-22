@@ -8,7 +8,7 @@ import { Plus, Minus, Trash2, ArrowRight, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
 import { useAuth } from "@/context/AuthContext"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { initializePayment } from "@/lib/payment"
 
@@ -119,10 +119,7 @@ export default function CartPage() {
                           className="h-8 w-8 bg-red-600 hover:bg-red-700"
                           onClick={() =>
                             addToCart(
-                              {
-                                ...item,
-                                quantity: 1,
-                              },
+                              item,
                               item.size,
                             )
                           }

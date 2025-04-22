@@ -1,16 +1,20 @@
 "use client"
 
-import { useState } from "react"
+import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { useCart } from "@/context/CartContext"
 import { processPayment } from "@/lib/payment"
 
-export default function CheckoutPage({ params }: { params: { orderId: string } }) {
-  const { orderId } = params
+type PageParams = {
+  orderId: string
+}
+
+export default function CheckoutPage({ params }: { params: Promise<PageParams> }) {
+  const { orderId } = use(params)
   const router = useRouter()
   const { toast } = useToast()
   const { clearCart } = useCart()

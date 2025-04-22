@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/context/CartContext"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import type { Product } from "@/types/product"
 
 interface ProductCardProps {
@@ -41,7 +41,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover"
           />
-          {product.discount > 0 && <Badge className="absolute top-2 right-2 bg-red-600">{product.discount}% OFF</Badge>}
+          {product.discount && product.discount > 0 && <Badge className="absolute top-2 right-2 bg-red-600">{product.discount}% OFF</Badge>}
         </Link>
       </div>
 

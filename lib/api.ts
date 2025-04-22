@@ -241,16 +241,21 @@ export async function getRelatedProducts(productId: string, categoryId: string, 
   // Simulate API call
   await delay(500)
 
+
+  const totalRelatedProducts = mockProducts
+    .filter((product) => product.categoryId === categoryId && product.id !== productId).length 
+    const totalRelatedProductsCount = totalRelatedProducts < 5 ? totalRelatedProducts : 4
+    
   // Get products from the same category, excluding the current product
   let relatedProducts = mockProducts
     .filter((product) => product.categoryId === categoryId && product.id !== productId)
-    .slice(0, limit)
+    .slice(0, totalRelatedProductsCount)
 
   // If we don't have enough related products, add some from other categories
-  if (relatedProducts.length < limit) {
+  if (relatedProducts.length < totalRelatedProductsCount) {
     const otherProducts = mockProducts
       .filter((product) => product.categoryId !== categoryId && product.id !== productId)
-      .slice(0, limit - relatedProducts.length)
+      .slice(0, totalRelatedProductsCount - relatedProducts.length)
 
     relatedProducts = [...relatedProducts, ...otherProducts]
   }
