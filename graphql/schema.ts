@@ -1,0 +1,241 @@
+import { gql } from "graphql-tag"
+
+export const typeDefs = gql`
+  enum Role {
+    USER
+    ADMIN
+  }
+
+  enum OrderStatus {
+    PENDING
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+  }
+
+  enum PaymentStatus {
+    PENDING
+    PAID
+    FAILED
+    REFUNDED
+  }
+
+  type User {
+    id: ID!
+    name: String!
+    email: String!
+    role: Role!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type Category {
+    id: ID!
+    name: String!
+    description: String!
+    products: [Product!]
+  }
+
+  type ProductSize {
+    id: ID!
+    value: String!
+    label: String!
+    price: Float!
+  }
+
+  type NutritionFact {
+    id: ID!
+    name: String!
+    value: String!
+  }
+
+  type Feature {
+    id: ID!
+    text: String!
+  }
+
+  type Review {
+    id: ID!
+    name: String!
+    rating: Int!
+    comment: String!
+    createdAt: String!
+  }
+
+  type Product {
+    id: ID!
+    name: String!
+    description: String!
+    longDescription: String
+    price: Float!
+    discountedPrice: Float
+    discount: Int
+    image: String!
+    categoryId: ID!
+    inStock: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    category: Category
+    sizes: [ProductSize!]
+    nutritionFacts: [NutritionFact!]
+    features: [Feature!]
+    reviews: [Review!]
+  }
+
+  type OrderItem {
+    id: ID!
+    productId: ID!
+    quantity: Int!
+    price: Float!
+    size: String
+    product: Product
+  }
+
+  type Order {
+    id: ID!
+    userId: ID!
+    status: OrderStatus!
+    totalAmount: Float!
+    shippingFee: Float!
+    shippingAddress: ShippingAddress!
+    paymentMethod: String!
+    paymentStatus: PaymentStatus!
+    createdAt: String!
+    updatedAt: String!
+    user: User
+    orderItems: [OrderItem!]!
+  }
+
+  input ShippingAddressInput {
+    fullName: String!
+    address: String!
+    city: String!
+    state: String!
+    postalCode: String!
+    phone: String!
+  }
+
+  type ShippingAddress {
+    fullName: String!
+    address: String!
+    city: String!
+    state: String!
+    postalCode: String!
+    phone: String!
+  }
+
+  input ProductSizeInput {
+    value: String!
+    label: String!
+    price: Float!
+  }
+
+  input NutritionFactInput {
+    name: String!
+    value: String!
+  }
+
+  input FeatureInput {
+    text: String!
+  }
+
+  input OrderItemInput {
+    productId: ID!
+    quantity: Int!
+    price: Float!
+    size: String
+  }
+
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+
+  type Query {
+    # User queries
+    me: User
+    user(id: ID!): User
+    users: [User!]!
+
+    # Category queries
+    categories: [Category!]!
+    category(id: ID!): Category
+
+    # Product queries
+    products: [Product!]!
+    product(id: ID!): Product
+    productsByCategory(categoryId: ID!): [Product!]!
+    searchProducts(query: String!): [Product!]!
+
+    # Order queries
+    orders: [Order!]!
+    order(id: ID!): Order
+    myOrders: [Order!]!
+  }
+
+  type Mutation {
+    # Auth mutations
+    signup(name: String!, email: String!, password: String!): AuthPayload!
+    login(email: String!, password: String!): AuthPayload!
+    logout: Boolean!
+
+    # User mutations
+    updateUser(id: ID!, name: String, email: String, role: Role): User!
+    deleteUser(id: ID!): Boolean!
+
+    # Category mutations
+    createCategory(name: String!, description: String!): Category!
+    updateCategory(id: ID!, name: String, description: String): Category!
+    deleteCategory(id: ID!): Boolean!
+
+    # Product mutations
+    createProduct(
+      name: String!
+      description: String!
+      longDescription: String
+      price: Float!
+      discountedPrice: Float
+      discount: Int
+      image: String!
+      categoryId: ID!
+      inStock: Boolean!
+      sizes: [ProductSizeInput!]
+      nutritionFacts: [NutritionFactInput!]
+      features: [FeatureInput!]
+    ): Product!
+
+    updateProduct(
+      id: ID!
+      name: String
+      description: String
+      longDescription: String
+      price: Float
+      discountedPrice: Float
+      discount: Int
+      image: String
+      categoryId: ID
+      inStock: Boolean
+      sizes: [ProductSizeInput!]
+      nutritionFacts: [NutritionFactInput!]
+      features: [FeatureInput!]
+    ): Product!
+
+    deleteProduct(id: ID!): Boolean!
+
+    # Review mutations
+    addReview(productId: ID!, name: String!, rating: Int!, comment: String!): Review!
+
+    # Order mutations
+    createOrder(
+      orderItems: [OrderItemInput!]!
+      shippingAddress: ShippingAddressInput!
+      paymentMethod: String!
+      totalAmount: Float!
+      shippingFee: Float!
+    ): Order!
+
+    updateOrderStatus(id: ID!, status: OrderStatus!): Order!
+    updatePaymentStatus(id: ID!, status: PaymentStatus!): Order!
+  }
+`

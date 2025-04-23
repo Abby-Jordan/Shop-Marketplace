@@ -5,13 +5,22 @@ export interface ProductSize {
 }
 
 export interface ProductReview {
+  id: string
   name: string
   rating: number
   comment: string
+  createdAt: string
 }
 
-export interface NutritionFacts {
-  [key: string]: string
+export interface ProductFeature {
+  id: string
+  text: string
+}
+
+export interface NutritionFact {
+  id: string
+  name: string
+  value: string
 }
 
 export interface Product {
@@ -26,7 +35,7 @@ export interface Product {
   categoryId: string
   inStock: boolean
   sizes?: ProductSize[]
-  nutritionFacts?: NutritionFacts
-  features?: string[]
+  nutritionFacts?: NutritionFact[]
+  features?: ProductFeature[]
   reviews?: ProductReview[]
 }

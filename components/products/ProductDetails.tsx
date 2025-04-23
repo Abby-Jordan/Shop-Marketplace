@@ -23,8 +23,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
             <>
               <h3>Features</h3>
               <ul>
-                {product.features.map((feature, index) => (
-                  <li key={index}>{feature}</li>
+                {product.features.map((feature) => (
+                  <li key={feature.id}>{feature.text}</li>
                 ))}
               </ul>
             </>
@@ -33,14 +33,14 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       </TabsContent>
 
       <TabsContent value="nutrition" className="pt-4">
-        {product.nutritionFacts ? (
+        {product.nutritionFacts && product.nutritionFacts.length > 0 ? (
           <div className="border border-gray-200 dark:border-gray-700 rounded-md p-4">
             <h3 className="font-bold text-lg mb-3">Nutrition Facts</h3>
             <div className="space-y-2">
-              {Object.entries(product.nutritionFacts).map(([key, value]) => (
-                <div key={key} className="flex justify-between border-b border-gray-200 dark:border-gray-700 py-2">
-                  <span className="capitalize">{key.replace("_", " ")}</span>
-                  <span className="font-medium">{value}</span>
+              {product.nutritionFacts.map((fact) => (
+                <div key={fact.id} className="flex justify-between border-b border-gray-200 dark:border-gray-700 py-2">
+                  <span className="capitalize">{fact.name}</span>
+                  <span className="font-medium">{fact.value}</span>
                 </div>
               ))}
             </div>
@@ -53,8 +53,8 @@ export default function ProductDetails({ product }: ProductDetailsProps) {
       <TabsContent value="reviews" className="pt-4">
         {product.reviews && product.reviews.length > 0 ? (
           <div className="space-y-4">
-            {product.reviews.map((review, index) => (
-              <div key={index} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
+            {product.reviews.map((review) => (
+              <div key={review.id} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-0">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-medium">{review.name}</div>
                   <div className="flex items-center">

@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id              String          @id @default(uuid())
+  name            String
+  description     String
+  longDescription String?         @map("long_description")
+  price           Float
+  discountedPrice Float?          @map("discounted_price")
+  discount        Int?
+  image           String
+  categoryId      String          @map("category_id")
+  inStock         Boolean         @default(true) @map("in_stock")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  features        Feature[]
+  nutritionFacts  NutritionFact[]
+  orderItems      OrderItem[]
+  productSizes    ProductSize[]
+  category        Category        @relation(fields: [categoryId], references: [id])
+  reviews         Review[]
+
+  @@map("products")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String
+  products    Product[]
+
+  @@map("categories")
+}
+
+model ProductSize {
+  id        String  @id @default(uuid())
+  value     String
+  label     String
+  price     Float
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_sizes")
+}
+
+model NutritionFact {
+  id        String  @id @default(uuid())
+  name      String
+  value     String
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("nutrition_facts")
+}
+
+model Feature {
+  id        String  @id @default(uuid())
+  text      String
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("features")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  name      String
+  rating    Int
+  comment   String
+  productId String   @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  userId          String        @map("user_id")
+  status          OrderStatus   @default(PENDING)
+  totalAmount     Float         @map("total_amount")
+  shippingFee     Float         @map("shipping_fee")
+  shippingAddress Json          @map("shipping_address")
+  paymentMethod   String        @map("payment_method")
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  orderItems      OrderItem[]
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String  @map("order_id")
+  productId String  @map("product_id")
+  quantity  Int
+  price     Float
+  size      String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}

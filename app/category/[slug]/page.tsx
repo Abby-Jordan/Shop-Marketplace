@@ -43,7 +43,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </div>
 
       <Suspense fallback={<ProductSkeleton count={8} />}>
-        <ProductGrid categoryId={slug} />
+        <ProductGrid categoryId={category.id} />
       </Suspense>
     </div>
   )

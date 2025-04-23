@@ -1,5 +1,6 @@
-import { getProductsByCategory } from "@/lib/api"
 import ProductCard from "@/components/products/ProductCard"
+import { getProductsByCategory } from "@/lib/api"
+import type { Product } from "@/types/product"
 
 interface ProductGridProps {
   categoryId: string

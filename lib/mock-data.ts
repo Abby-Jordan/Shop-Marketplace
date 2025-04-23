@@ -19,22 +19,34 @@ export const mockProducts: Product[] = [
       { value: "1l", label: "1 Liter", price: 55 },
       { value: "2l", label: "2 Liters", price: 100 },
     ],
-    nutritionFacts: {
-      calories: "65 kcal per 100ml",
-      protein: "3.3g per 100ml",
-      fat: "3.5g per 100ml",
-      carbohydrates: "4.7g per 100ml",
-      calcium: "120mg per 100ml",
-    },
+    nutritionFacts: [
+      { id: "1", name: "Calories", value: "65 kcal per 100ml" },
+      { id: "2", name: "Protein", value: "3.3g per 100ml" },
+      { id: "3", name: "Fat", value: "3.5g per 100ml" },
+      { id: "4", name: "Carbohydrates", value: "4.7g per 100ml" },
+      { id: "5", name: "Calcium", value: "120mg per 100ml" }
+    ],
     features: [
-      "No preservatives added",
-      "Rich in calcium and protein",
-      "Pasteurized for safety",
-      "Sourced from grass-fed cows",
+      { id: "1", text: "No preservatives added" },
+      { id: "2", text: "Rich in calcium and protein" },
+      { id: "3", text: "Pasteurized for safety" },
+      { id: "4", text: "Sourced from grass-fed cows" }
     ],
     reviews: [
-      { name: "Rahul S.", rating: 5, comment: "Best milk I've had in years. Very fresh and tasty." },
-      { name: "Priya M.", rating: 4, comment: "Good quality milk, my kids love it." },
+      { 
+        id: "1",
+        name: "Rahul S.", 
+        rating: 5, 
+        comment: "Best milk I've had in years. Very fresh and tasty.",
+        createdAt: "2024-03-15T10:30:00Z"
+      },
+      { 
+        id: "2",
+        name: "Priya M.", 
+        rating: 4, 
+        comment: "Good quality milk, my kids love it.",
+        createdAt: "2024-03-14T15:45:00Z"
+      }
     ],
   },
   {

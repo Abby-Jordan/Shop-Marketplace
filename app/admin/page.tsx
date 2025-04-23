@@ -19,8 +19,8 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (isClient && !isLoading && (!user || !user.isAdmin)) {
-      router.push("/login?redirect=/admin")
+    if (isClient && !isLoading && (!user || user.role !== "ADMIN")) {
+      router.push("/login")
     }
   }, [user, isLoading, isClient, router])
 
@@ -32,7 +32,7 @@ export default function AdminPage() {
     )
   }
 
-  if (!user || !user.isAdmin) {
+  if (!user || user.role !== "ADMIN") {
     return null // Will redirect in useEffect
   }
 

@@ -11,6 +11,33 @@ import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
 import { initializePayment } from "@/lib/payment"
+import { useMutation, gql } from "@apollo/client"
+
+const CREATE_ORDER_MUTATION = gql`
+  mutation CreateOrder(
+    $orderItems: [OrderItemInput!]!
+    $shippingAddress: ShippingAddressInput!
+    $paymentMethod: String!
+    $totalAmount: Float!
+    $shippingFee: Float!
+  ) {
+    createOrder(
+      orderItems: $orderItems
+      shippingAddress: $shippingAddress
+      paymentMethod: $paymentMethod
+      totalAmount: $totalAmount
+      shippingFee: $shippingFee
+    ) {
+      id
+      status
+      totalAmount
+      shippingFee
+      paymentMethod
+      paymentStatus
+      createdAt
+    }
+  }
+`
 
 export default function CartPage() {
   const { cart, addToCart, removeFromCart, clearCart, getCartTotal } = useCart()
@@ -18,6 +45,8 @@ export default function CartPage() {
   const { toast } = useToast()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
+
+  const [createOrder] = useMutation(CREATE_ORDER_MUTATION)
 
   const cartTotal = getCartTotal()
   const deliveryFee = cartTotal > 500 ? 0 : 40
@@ -37,9 +66,46 @@ export default function CartPage() {
     setIsProcessing(true)
 
     try {
-      const orderId = await initializePayment(totalAmount)
-      router.push(`/checkout/${orderId}`)
+      // Create a mock shipping address (in a real app, this would come from the user's profile or a form)
+      const shippingAddress = {
+        fullName: user.name,
+        address: "123 Main St",
+        city: "Mumbai",
+        state: "Maharashtra",
+        postalCode: "400001",
+        phone: "9876543210",
+      }
+
+      // Create order items from cart
+      const orderItems = cart.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.size ? item.size.price : item.discountedPrice || item.price,
+        size: item.size?.value,
+      }))
+
+      // Create the order in the database
+      const { data } = await createOrder({
+        variables: {
+          orderItems,
+          shippingAddress,
+          paymentMethod: "CARD",
+          totalAmount,
+          shippingFee: deliveryFee,
+        },
+      })
+
+      if (data?.createOrder) {
+        // Initialize payment
+        const paymentId = await initializePayment(totalAmount)
+
+        // Redirect to checkout page
+        router.push(`/checkout/${data.createOrder.id}?paymentId=${paymentId}`)
+      } else {
+        throw new Error("Failed to create order")
+      }
     } catch (error) {
+      console.error("Checkout error:", error)
       toast({
         title: "Checkout Failed",
         description: "There was an error processing your checkout. Please try again.",

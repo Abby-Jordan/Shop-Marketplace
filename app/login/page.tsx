@@ -17,7 +17,7 @@ import { useAuth } from "@/context/AuthContext"
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const { login, register } = useAuth()
+  const { login, register, user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -45,7 +45,13 @@ export default function LoginPage() {
         title: "Login Successful",
         description: "Welcome back to Shree Mahakali Dairy!",
       })
-      router.push(redirectUrl)
+      
+      // Check if redirect is to admin page and user is not admin
+      if (redirectUrl === "/admin" && user?.role !== "ADMIN") {
+        router.push("/")
+      } else {
+        router.push(redirectUrl)
+      }
     } catch (error) {
       toast({
         title: "Login Failed",

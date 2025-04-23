@@ -1,26 +1,40 @@
 "use client"
 
 import { useState, use } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useCart } from "@/context/CartContext"
 import { processPayment } from "@/lib/payment"
+import { useMutation, gql } from "@apollo/client"
 
 type PageParams = {
   orderId: string
 }
 
+const UPDATE_PAYMENT_STATUS_MUTATION = gql`
+  mutation UpdatePaymentStatus($id: ID!, $status: PaymentStatus!) {
+    updatePaymentStatus(id: $id, status: $status) {
+      id
+      paymentStatus
+    }
+  }
+`
+
 export default function CheckoutPage({ params }: { params: Promise<PageParams> }) {
   const { orderId } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paymentId = searchParams.get("paymentId")
   const { toast } = useToast()
   const { clearCart } = useCart()
 
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "failed">("pending")
   const [isProcessing, setIsProcessing] = useState(false)
+
+  const [updatePaymentStatus] = useMutation(UPDATE_PAYMENT_STATUS_MUTATION)
 
   // Simulate payment processing
   const handleCompletePayment = async () => {
@@ -30,10 +44,18 @@ export default function CheckoutPage({ params }: { params: Promise<PageParams> }
       const result = await processPayment(orderId, {
         // In a real app, this would include payment details
         method: "card",
-        amount: 1000, // Example amount
+        paymentId,
       })
 
       if (result.success) {
+        // Update payment status in the database
+        await updatePaymentStatus({
+          variables: {
+            id: orderId,
+            status: "PAID",
+          },
+        })
+
         setPaymentStatus("success")
         clearCart()
         toast({
@@ -41,6 +63,14 @@ export default function CheckoutPage({ params }: { params: Promise<PageParams> }
           description: "Your order has been placed successfully.",
         })
       } else {
+        // Update payment status in the database
+        await updatePaymentStatus({
+          variables: {
+            id: orderId,
+            status: "FAILED",
+          },
+        })
+
         setPaymentStatus("failed")
         toast({
           title: "Payment Failed",
@@ -49,6 +79,7 @@ export default function CheckoutPage({ params }: { params: Promise<PageParams> }
         })
       }
     } catch (error) {
+      console.error("Payment error:", error)
       setPaymentStatus("failed")
       toast({
         title: "Payment Failed",
@@ -74,7 +105,7 @@ export default function CheckoutPage({ params }: { params: Promise<PageParams> }
               <div className="border rounded-md p-4">
                 <h3 className="font-medium mb-2">Order Summary</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Order ID: {orderId}</p>
-                {/* In a real app, this would show the order details */}
+                <p className="text-sm text-gray-600 dark:text-gray-400">Payment ID: {paymentId}</p>
               </div>
 
               <div className="border rounded-md p-4">
