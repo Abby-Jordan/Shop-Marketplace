@@ -59,7 +59,7 @@ export default function CartPage() {
         description: "Please login to continue with checkout",
         variant: "destructive",
       })
-      router.push("/login?redirect=/cart")
+      router.push("/auth?redirect=/cart")
       return
     }
 

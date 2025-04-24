@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
     const isAdminUser = await isAdmin(request)
 
     if (!isAdminUser) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      return NextResponse.redirect(new URL("/auth", request.url))
     }
   }
 
@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     const isAuthUser = await isAuthenticated(request)
 
     if (!isAuthUser) {
-      return NextResponse.redirect(new URL(`/login?redirect=${request.nextUrl.pathname}`, request.url))
+      return NextResponse.redirect(new URL(`/auth?redirect=${request.nextUrl.pathname}`, request.url))
     }
   }
 

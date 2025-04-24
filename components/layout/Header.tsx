@@ -129,7 +129,7 @@ const Header = () => {
                 </div>
               </div>
             ) : (
-              <Link href="/login">
+              <Link href="/auth">
                 <Button variant="ghost" size="sm">
                   Login
                 </Button>

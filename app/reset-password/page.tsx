@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
 
       setPassword("")
       setConfirmPassword("")
-      router.push("/login")
+      router.push("/auth")
     } catch (error) {
       toast({
         title: "Error",
@@ -136,7 +136,7 @@ export default function ResetPasswordPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => router.push("/login")}
+                onClick={() => router.push("/auth")}
               >
                 Back to Login
               </Button>
