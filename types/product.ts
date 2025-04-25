@@ -34,6 +34,8 @@ export interface Product {
   image: string
   categoryId: string
   inStock: boolean
+  createdAt: string
+  updatedAt: string
   sizes?: ProductSize[]
   nutritionFacts?: NutritionFact[]
   features?: ProductFeature[]

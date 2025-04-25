@@ -46,16 +46,27 @@ export const resolvers = {
     },
 
     // Product queries
-    products: async () => {
-      return prisma.product.findMany({
-        include: {
-          category: true,
-          productSizes: true,
-          nutritionFacts: true,
-          features: true,
-          reviews: true,
-        },
-      })
+    products: async (_: ResolverParent, { orderBy }: { orderBy?: { field: string; direction: string } }) => {
+      try {
+        const orderByField = orderBy?.field || 'updatedAt'
+        const orderByDirection = orderBy?.direction || 'desc'
+
+        return prisma.product.findMany({
+          include: {
+            category: true,
+            productSizes: true,
+            nutritionFacts: true,
+            features: true,
+            reviews: true,
+          },
+          orderBy: {
+            [orderByField]: orderByDirection,
+          },
+        })
+      } catch (error) {
+        console.error('Error in products query:', error)
+        throw new Error('Failed to fetch products')
+      }
     },
 
     product: async (_: ResolverParent, { id }: { id: string }) => {

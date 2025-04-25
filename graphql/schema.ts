@@ -152,6 +152,11 @@ export const typeDefs = gql`
     user: User!
   }
 
+  input ProductOrderByInput {
+    field: String!
+    direction: String!
+  }
+
   type Query {
     # User queries
     me: User
@@ -163,7 +168,7 @@ export const typeDefs = gql`
     category(id: ID!): Category
 
     # Product queries
-    products: [Product!]!
+    products(orderBy: ProductOrderByInput): [Product!]!
     product(id: ID!): Product
     productsByCategory(categoryId: ID!): [Product!]!
     searchProducts(query: String!): [Product!]!
