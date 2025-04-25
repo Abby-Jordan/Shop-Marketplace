@@ -1,0 +1,164 @@
+import { gql } from '@apollo/client';
+
+export const UPDATE_USER_STATUS = gql`
+  mutation UpdateUserStatus($id: ID!, $status: UserStatus!) {
+    updateUserStatus(id: $id, status: $status) {
+      id
+      status
+    }
+  }
+`;
+
+export const DELETE_USER = gql`
+  mutation DeleteUser($id: ID!) {
+    deleteUser(id: $id)
+  }
+`;
+
+export const RECORD_USER_ACTIVITY = gql`
+  mutation RecordUserActivity($userId: ID!, $type: String!, $details: JSON) {
+    recordUserActivity(userId: $userId, type: $type, details: $details) {
+      id
+      type
+      details
+      createdAt
+    }
+  }
+`; 
+
+export const ADD_USER = gql`
+  mutation AddUser($name: String!, $email: String!, $isAdmin: Boolean!) {
+    addUser(name: $name, email: $email, isAdmin: $isAdmin) {
+      id
+      name
+      email
+    }
+  }
+`; 
+
+export const DELETE_PRODUCT_MUTATION = gql`
+   mutation DeleteProductMutation($deleteProductId: ID!) {
+  deleteProduct(id: $deleteProductId)
+}
+`
+
+export const CREATE_PRODUCT_MUTATION = gql`
+  mutation CreateProduct(
+    $name: String!
+    $description: String!
+    $longDescription: String
+    $price: Float!
+    $discountedPrice: Float
+    $discount: Int
+    $image: String!
+    $categoryId: ID!
+    $inStock: Boolean!
+    $sizes: [ProductSizeInput!]
+    $nutritionFacts: [NutritionFactInput!]
+    $features: [FeatureInput!]
+  ) {
+    createProduct(
+      name: $name
+      description: $description
+      longDescription: $longDescription
+      price: $price
+      discountedPrice: $discountedPrice
+      discount: $discount
+      image: $image
+      categoryId: $categoryId
+      inStock: $inStock
+      sizes: $sizes
+      nutritionFacts: $nutritionFacts
+      features: $features
+    ) {
+      id
+      name
+      description
+      longDescription
+      price
+      discountedPrice
+      discount
+      image
+      categoryId
+      inStock
+      createdAt
+      updatedAt
+      sizes {
+        id
+        value
+        label
+        price
+      }
+      nutritionFacts {
+        id
+        name
+        value
+      }
+      features {
+        id
+        text
+      }
+    }
+  }
+`
+export const UPDATE_PRODUCT_MUTATION = gql`
+  mutation UpdateProduct(
+    $id: ID!
+    $name: String
+    $description: String
+    $longDescription: String
+    $price: Float
+    $discountedPrice: Float
+    $discount: Int
+    $image: String
+    $categoryId: ID
+    $inStock: Boolean
+    $sizes: [ProductSizeInput!]
+    $nutritionFacts: [NutritionFactInput!]
+    $features: [FeatureInput!]
+  ) {
+    updateProduct(
+      id: $id
+      name: $name
+      description: $description
+      longDescription: $longDescription
+      price: $price
+      discountedPrice: $discountedPrice
+      discount: $discount
+      image: $image
+      categoryId: $categoryId
+      inStock: $inStock
+      sizes: $sizes
+      nutritionFacts: $nutritionFacts
+      features: $features
+    ) {
+      id
+      name
+      description
+      longDescription
+      price
+      discountedPrice
+      discount
+      image
+      categoryId
+      inStock
+      createdAt
+      updatedAt
+      sizes {
+        id
+        value
+        label
+        price
+      }
+      nutritionFacts {
+        id
+        name
+        value
+      }
+      features {
+        id
+        text
+      }
+    }
+  }
+`

@@ -24,7 +24,7 @@ const handler = startServerAndCreateNextHandler(server, {
     const user = sessionUser ? await prisma.user.findUnique({ where: { id: sessionUser.id } }) : null
 
     // Return the context with the user
-    return { user }
+    return { user, prisma }
   },
 })
 

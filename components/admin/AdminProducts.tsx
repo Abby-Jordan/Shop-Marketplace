@@ -32,171 +32,11 @@ import { Pencil, Trash2, Plus, Search, UploadCloud } from "lucide-react"
 import { useMutation, useQuery, gql } from "@apollo/client"
 import { useToast } from "@/hooks/use-toast"
 import type { Product } from "@/types/product"
+import { graphql } from "graphql"
 
-const UPDATE_PRODUCT_MUTATION = gql`
-  mutation UpdateProduct(
-    $id: ID!
-    $name: String
-    $description: String
-    $longDescription: String
-    $price: Float
-    $discountedPrice: Float
-    $discount: Int
-    $image: String
-    $categoryId: ID
-    $inStock: Boolean
-    $sizes: [ProductSizeInput!]
-    $nutritionFacts: [NutritionFactInput!]
-    $features: [FeatureInput!]
-  ) {
-    updateProduct(
-      id: $id
-      name: $name
-      description: $description
-      longDescription: $longDescription
-      price: $price
-      discountedPrice: $discountedPrice
-      discount: $discount
-      image: $image
-      categoryId: $categoryId
-      inStock: $inStock
-      sizes: $sizes
-      nutritionFacts: $nutritionFacts
-      features: $features
-    ) {
-      id
-      name
-      description
-      longDescription
-      price
-      discountedPrice
-      discount
-      image
-      categoryId
-      inStock
-      createdAt
-      updatedAt
-      sizes {
-        id
-        value
-        label
-        price
-      }
-      nutritionFacts {
-        id
-        name
-        value
-      }
-      features {
-        id
-        text
-      }
-    }
-  }
-`
+import { GET_PRODUCTS_QUERY, GET_CATEGORIES_QUERY } from '../../graphql/queries'
+import { UPDATE_PRODUCT_MUTATION, CREATE_PRODUCT_MUTATION, DELETE_PRODUCT_MUTATION } from '../../graphql/mutation'
 
-const GET_PRODUCTS_QUERY = gql`
-  query GetProducts {
-    products(orderBy: { field: "updatedAt", direction: "desc" }) {
-      id
-      name
-      description
-      longDescription
-      price
-      discountedPrice
-      discount
-      image
-      categoryId
-      inStock
-      createdAt
-      updatedAt
-      sizes {
-        id
-        value
-        label
-        price
-      }
-      nutritionFacts {
-        id
-        name
-        value
-      }
-      features {
-        id
-        text
-      }
-    }
-  }
-`
-
-const GET_CATEGORIES_QUERY = gql`
-  query GetCategories {
-    categories {
-      id
-      name
-    }
-  }
-`
-
-const CREATE_PRODUCT_MUTATION = gql`
-  mutation CreateProduct(
-    $name: String!
-    $description: String!
-    $longDescription: String
-    $price: Float!
-    $discountedPrice: Float
-    $discount: Int
-    $image: String!
-    $categoryId: ID!
-    $inStock: Boolean!
-    $sizes: [ProductSizeInput!]
-    $nutritionFacts: [NutritionFactInput!]
-    $features: [FeatureInput!]
-  ) {
-    createProduct(
-      name: $name
-      description: $description
-      longDescription: $longDescription
-      price: $price
-      discountedPrice: $discountedPrice
-      discount: $discount
-      image: $image
-      categoryId: $categoryId
-      inStock: $inStock
-      sizes: $sizes
-      nutritionFacts: $nutritionFacts
-      features: $features
-    ) {
-      id
-      name
-      description
-      longDescription
-      price
-      discountedPrice
-      discount
-      image
-      categoryId
-      inStock
-      createdAt
-      updatedAt
-      sizes {
-        id
-        value
-        label
-        price
-      }
-      nutritionFacts {
-        id
-        name
-        value
-      }
-      features {
-        id
-        text
-      }
-    }
-  }
-`
 
 interface Category {
   id: string
@@ -244,7 +84,7 @@ export default function AdminProducts() {
     }
   })
   const { data: categoriesData } = useQuery(GET_CATEGORIES_QUERY)
-  
+
   // No need for client-side sorting since server handles it
   const products = productsData?.products || []
   const categories = categoriesData?.categories || []
@@ -289,6 +129,26 @@ export default function AdminProducts() {
       })
     },
   })
+
+  const [deleteProduct] = useMutation(DELETE_PRODUCT_MUTATION, {
+    onCompleted: () => {
+      toast({
+        title: "Product Deleted",
+        description: "The product has been deleted successfully.",
+      })
+      refetchProducts()
+      setIsDeleteDialogOpen(false)
+    },
+    onError: (error) => {
+      console.error('Delete error:', error)
+      toast({ 
+        title: "Delete Failed",
+        description: error.message || "There was an error deleting the product. Please try again.",
+        variant: "destructive",
+      })
+    },
+  })
+  
 
   const filteredProducts = products.filter(
     (product: Product) =>
@@ -366,10 +226,22 @@ export default function AdminProducts() {
     setIsDeleteDialogOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (currentProduct) {
-      // Implement delete mutation here
-      setIsDeleteDialogOpen(false)
+      try {
+        await deleteProduct({
+          variables: {
+            deleteProductId: currentProduct.id
+          }
+        })
+      } catch (error: any) {
+        console.error('Delete error:', error)
+        toast({
+          title: "Delete Failed",
+          description: error.message || "There was an error deleting the product. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -533,10 +405,10 @@ export default function AdminProducts() {
     if (!formData.image) {
       errors.image = "Image is required"
     }
-    if(formData.discountedPrice && Number(formData.discountedPrice) >= Number(formData.price)) {
+    if (formData.discountedPrice && Number(formData.discountedPrice) >= Number(formData.price)) {
       errors.discountedPrice = "Discounted price cannot be greater than or equal to the price"
     }
-    if(formData.discountedPrice && Number(formData.discountedPrice) < 0) {
+    if (formData.discountedPrice && Number(formData.discountedPrice) < 0) {
       errors.discountedPrice = "Discounted price cannot be negative"
     }
 
@@ -650,24 +522,24 @@ export default function AdminProducts() {
           <div className="space-y-4 overflow-y-auto pr-2 flex-grow">
             <div>
               <Label>Name *</Label>
-              <Input 
-                value={formData.name} 
+              <Input
+                value={formData.name}
                 onChange={(e) => {
                   setFormData({ ...formData, name: e.target.value })
                   setFormErrors({ ...formErrors, name: "" })
-                }} 
+                }}
               />
               {formErrors.name && <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>}
             </div>
             <div>
               <Label>Description *</Label>
-              <Textarea 
-                value={formData.description} 
+              <Textarea
+                value={formData.description}
                 onChange={(e) => {
                   setFormData({ ...formData, description: e.target.value })
                   setFormErrors({ ...formErrors, description: "" })
-                }} 
-                className="h-20" 
+                }}
+                className="h-20"
               />
               {formErrors.description && <p className="text-sm text-red-500 mt-1">{formErrors.description}</p>}
             </div>
@@ -678,13 +550,13 @@ export default function AdminProducts() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Price *</Label>
-                <Input 
-                  type="number" 
-                  value={formData.price} 
+                <Input
+                  type="number"
+                  value={formData.price}
                   onChange={(e) => {
                     setFormData({ ...formData, price: e.target.value })
                     setFormErrors({ ...formErrors, price: "" })
-                  }} 
+                  }}
                 />
                 {formErrors.price && <p className="text-sm text-red-500 mt-1">{formErrors.price}</p>}
               </div>
@@ -725,9 +597,9 @@ export default function AdminProducts() {
             </div>
             <div>
               <Label>Product Image *</Label>
-              <Input 
-                type="file" 
-                accept="image/*" 
+              <Input
+                type="file"
+                accept="image/*"
                 onChange={handleImageChange}
                 className={formErrors.image ? "border-red-500" : ""}
               />

@@ -8,14 +8,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  orders    Order[]
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  password        String
+  role            Role       @default(USER)
+  status          UserStatus @default(ACTIVE)
+  lastLoginAt     DateTime?  @map("last_login_at")
+  lastActivityAt  DateTime?  @map("last_activity_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  orders          Order[]
+  activities      UserActivity[]
 
   @@map("users")
 }
@@ -124,9 +128,26 @@ model OrderItem {
   @@map("order_items")
 }
 
+model UserActivity {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_activities")
+}
+
 enum Role {
   USER
   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  DEACTIVATED
 }
 
 enum OrderStatus {

@@ -12,57 +12,152 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, UserPlus, UserX } from "lucide-react"
+import { useQuery, useMutation } from '@apollo/client'
+import { GET_USERS } from '../../graphql/queries'
+import { UPDATE_USER_STATUS, DELETE_USER, ADD_USER } from '../../graphql/mutation'
+import { User } from "@/types/user"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock users data
-const mockUsers = Array.from({ length: 15 }).map((_, i) => ({
-  id: `USR${1000 + i}`,
-  name: `User ${i + 1}`,
-  email: `user${i + 1}@example.com`,
-  joinDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-  isAdmin: i === 0,
-  status: Math.random() > 0.2 ? "Active" : "Inactive",
-}))
+const statusColors = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  INACTIVE: 'bg-yellow-100 text-yellow-800',
+  DEACTIVATED: 'bg-red-100 text-red-800',
+}
+
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(mockUsers)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
   const [openDialog, setOpenDialog] = useState(false)
-
   const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
+    name: '',
+    email: '',
     isAdmin: false,
   })
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    isAdmin: '',
+  })
+  const { toast } = useToast()
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+  const resetForm = () => {
+    setNewUser({
+      name: '',
+      email: '',
+      isAdmin: false,
+    })
+    setFormErrors({
+      name: '',
+      email: '',
+      isAdmin: '',
+    })
+  }
+
+  const { data, loading, error, refetch } = useQuery(GET_USERS)
+  const [updateUserStatus] = useMutation(UPDATE_USER_STATUS)
+  const [deleteUser] = useMutation(DELETE_USER, {
+    onCompleted: () => {
+      toast({
+        title: "User Deleted",
+        description: "The user has been deleted successfully.",
+      })
+      refetch()
+      setIsDeleteDialogOpen(false)
+    },
+    onError: (error) => {
+      console.error('Error deleting user:', error)
+      toast({
+        title: "Error Deleting User",
+        description: error.message || "There was an error deleting the user. Please try again.",
+      })
+    },
+  })
+
+  const [addUser] = useMutation(ADD_USER, {
+    onCompleted: () => {
+      toast({
+        title: "User Added",
+        description: "The user has been added successfully.",
+      })
+      refetch()
+      setOpenDialog(false)
+      resetForm()
+    },
+    onError: (error) => {
+      console.error('Error adding user:', error)
+      toast({
+        title: "Error Adding User",
+        description: error.message || "There was an error adding the user. Please try again.",
+        variant: "destructive",
+      })
+    },
+  })
+
+  const handleStatusChange = async (userId: string, newStatus: string) => {
+    try {
+      await updateUserStatus({
+        variables: { id: userId, status: newStatus },
+      })
+      refetch()
+    } catch (error) {
+      console.error('Error updating user status:', error)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return
+
+    try {
+      await deleteUser({
+        variables: { id: selectedUser.id },
+      })
+    } catch (error: any) {
+      console.error('Error deleting user:', error)
+      toast({
+        title: "Error Deleting User",
+        description: error.message || "There was an error deleting the user. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddUser = async () => {
+    console.log(newUser)
+    try {
+      await addUser({
+        variables: {
+          name: newUser.name,
+          email: newUser.email,
+          isAdmin: newUser.isAdmin,
+        },
+      })
+      setOpenDialog(false)
+      refetch()
+    } catch (error) {
+      console.error('Error adding user:', error)
+    }
+  }
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+  }
+
+  const filteredUsers = data?.users?.filter((user: User) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAddUser = () => {
-    const id = `USR${Math.floor(1000 + Math.random() * 9000)}`
-    const joinDate = new Date().toISOString().split("T")[0]
+  console.log(filteredUsers)
 
-    const newUserData = {
-      id,
-      ...newUser,
-      joinDate,
-      status: "Active",
-    }
-
-    setUsers([newUserData, ...users])
-    setNewUser({ name: "", email: "", isAdmin: false })
-    setOpenDialog(false)
-  }
-
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter((user) => user.id !== id))
-  }
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
 
   return (
     <div className="space-y-6">
@@ -73,7 +168,7 @@ export default function AdminUsers() {
             placeholder="Search users..."
             className="pl-8"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearch}
           />
         </div>
 
@@ -133,50 +228,59 @@ export default function AdminUsers() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Join Date</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Last Activity</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user: User) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{user.joinDate}</TableCell>
+                <TableCell>{user.role}</TableCell>
                 <TableCell>
-                  <Badge
-                    className={
-                      user.isAdmin
-                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                        : "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
-                    }
-                  >
-                    {user.isAdmin ? "Admin" : "Customer"}
-                  </Badge>
+                  {user.role !== 'ADMIN' ? (
+                    <Badge className={statusColors[user.status as keyof typeof statusColors]}>
+                      {user.status}
+                    </Badge>
+                  ) : '-'}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    className={
-                      user.status === "Active"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                    }
-                  >
-                    {user.status}
-                  </Badge>
+                  {user.role !== 'ADMIN' ? user.lastActivityAt
+                    ? new Date(user.lastActivityAt).toLocaleDateString()
+                    : 'Never'
+                  : '-'}
                 </TableCell>
                 <TableCell className="text-right">
-                  {user.isAdmin ? (
-                    <Badge className="text-xs text-gray-500 bg-transparent border border-gray-300">
-                      Protected
-                    </Badge>
-                  ) : (
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(user.id)}>
-                      <UserX className="h-4 w-4 text-red-600" />
-                    </Button>
-                  )}
+                  <div className="flex gap-2 justify-end">
+                    {user.role !== 'ADMIN' ? (
+                      <>
+                        <select
+                          value={user.status}
+                          onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                          className="border rounded px-2 py-1"
+                        >
+                          <option value="ACTIVE">Active</option>
+                          <option value="INACTIVE">Inactive</option>
+                          <option value="DEACTIVATED">Deactivated</option>
+                        </select>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user)
+                            setIsDeleteDialogOpen(true)
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    ) : <Button variant="secondary" size="sm" disabled>
+                      Administrator
+                    </Button>}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -190,6 +294,25 @@ export default function AdminUsers() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedUser?.name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteUser}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,17 +1,24 @@
-import { PrismaClient, User, Product, Category, Order, OrderItem, ProductSize, NutritionFact, Feature, Review, Role, OrderStatus, PaymentStatus } from "@prisma/client"
+import { PrismaClient, User, Product, Category, Order, OrderItem, ProductSize, NutritionFact, Feature, Review, Role, OrderStatus, PaymentStatus, UserStatus } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import { GraphQLDateTime, GraphQLJSON } from 'graphql-scalars';
 import { signJwtToken, getCurrentUser } from "@/lib/auth"
+import { v4 as uuidv4 } from 'uuid';
+import sgMail from '@sendgrid/mail';
 
 const prisma = new PrismaClient()
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 type Context = {
   user?: User | null
+  prisma: PrismaClient
 }
 
 type ResolverParent = unknown
 type ResolverArgs = Record<string, unknown>
 
 export const resolvers = {
+  DateTime: GraphQLDateTime,
+  JSON: GraphQLJSON,
   Query: {
     // User queries
     me: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
@@ -21,19 +28,36 @@ export const resolvers = {
     },
 
     user: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
-        throw new Error("Not authorized")
+      if (!context.user || context.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized');
       }
-      return prisma.user.findUnique({ where: { id } })
+      return await context.prisma.user.findUnique({
+        where: { id },
+        include: {
+          orders: true,
+        },
+      });
     },
 
     users: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
-        throw new Error("Not authorized")
+      if (!context.user || context.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized');
       }
-      return prisma.user.findMany()
+      return await context.prisma.user.findMany({
+        include: {
+          orders: true,
+        },
+      });
+    },
+
+    userActivity: async (_: any, { userId }: { userId: string }, context: Context) => {
+      if (!context.user || context.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized');
+      }
+      return await context.prisma.userActivity.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      });
     },
 
     // Category queries
@@ -271,13 +295,21 @@ export const resolvers = {
     },
 
     deleteUser: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
-        throw new Error("Not authorized")
+      if (!context.user || context.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized');
       }
 
-      await prisma.user.delete({ where: { id } })
-      return true
+      const user = await context.prisma.user.findUnique({ where: { id } });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.role === 'ADMIN') {
+        throw new Error('Cannot delete admin user');
+      }
+
+      await context.prisma.user.delete({ where: { id } });
+      return true;
     },
 
     // Category mutations
@@ -638,6 +670,105 @@ export const resolvers = {
           },
         },
       })
+    },
+
+    updateUserStatus: async (_: any, { id, status }: { id: string; status: string }, context: Context) => {
+      if (!context.user || context.user.role !== 'ADMIN') {
+        throw new Error('Unauthorized');
+      }
+
+      const user = await context.prisma.user.findUnique({ where: { id } });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.role === 'ADMIN') {
+        throw new Error('Cannot modify admin user status');
+      }
+
+      return await context.prisma.user.update({
+        where: { id },
+        data: { status: status as UserStatus },
+      });
+    },
+
+    recordUserActivity: async (_: any, { userId, type, details }: { userId: string; type: string; details: any }, context: Context) => {
+      const user = await context.prisma.user.findUnique({ where: { id: userId } });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Update last activity timestamp
+      await context.prisma.user.update({
+        where: { id: userId },
+        data: { lastActivityAt: new Date() },
+      });
+
+      return await context.prisma.userActivity.create({
+        data: {
+          userId,
+          type,
+          details,
+        },
+      });
+    },
+
+    addUser: async (_: ResolverParent, { name, email, isAdmin }: { name: string; email: string; isAdmin: boolean }, context: Context) => {
+      const currentUser = await getCurrentUser();
+      const saltRounds = 10;
+      if (!currentUser || currentUser.role !== "ADMIN") {
+        throw new Error("Not authorized");
+      }
+    
+      const temporaryPassword = uuidv4().substring(0, 12);
+      const hashedPassword = await bcrypt.hash(temporaryPassword, saltRounds);
+    
+      const newUser = await prisma.user.create({
+        data: { name, email, role: isAdmin ? "ADMIN" : "USER", password: hashedPassword },
+      });
+    
+      const msg = {
+        to: newUser.email,
+        from: process.env.EMAIL_FROM!, // Your verified sender email address
+        subject: 'Your New Account Information',
+        html: `
+          <p>Hello ${newUser.name},</p>
+          <p>An administrator has created a new account for you on our platform.</p>
+          <p>Your temporary password is: <strong>${temporaryPassword}</strong></p>
+          <p>Please log in with this password and immediately change it to a password of your choice.</p>
+          <p><a href="${process.env.FRONTEND_URL}/login">Click here to log in</a></p>
+          <p>Thank you,</p>
+          <p>The Team</p>
+        `,
+      };
+    
+      try {
+        await sgMail.send(msg);
+        console.log(`Email sent to ${newUser.email}`);
+      } catch (error: any) {
+        console.log(process.env.SENDGRID_API_KEY)
+        console.log(process.env.EMAIL_FROM)
+        console.log(msg)
+        console.error('SendGrid error:', JSON.stringify(error, null, 2));
+
+        // You might want to handle this error gracefully (e.g., log it, inform the admin)
+      }
+    
+      return newUser;
+    },
+  },
+
+  User: {
+    status: (user: any) => {
+      if (user.status === 'DEACTIVATED') return 'DEACTIVATED';
+      
+      const now = new Date();
+      const lastActivity = user.lastActivityAt ? new Date(user.lastActivityAt) : null;
+      
+      if (!lastActivity) return 'INACTIVE';
+      
+      const daysSinceLastActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24);
+      return daysSinceLastActivity <= 30 ? 'ACTIVE' : 'INACTIVE';
     },
   },
 }

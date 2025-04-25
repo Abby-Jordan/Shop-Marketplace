@@ -1,6 +1,10 @@
+import { GraphQLDateTime, GraphQLJSON } from 'graphql-scalars';
 import { gql } from "graphql-tag"
 
 export const typeDefs = gql`
+  scalar DateTime
+  scalar JSON
+
   enum Role {
     USER
     ADMIN
@@ -21,13 +25,23 @@ export const typeDefs = gql`
     REFUNDED
   }
 
+  enum UserStatus {
+    ACTIVE
+    INACTIVE
+    DEACTIVATED
+  }
+
   type User {
     id: ID!
     name: String!
     email: String!
     role: Role!
-    createdAt: String!
-    updatedAt: String!
+    status: UserStatus!
+    lastLoginAt: DateTime
+    lastActivityAt: DateTime
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    orders: [Order!]!
   }
 
   type Category {
@@ -157,11 +171,20 @@ export const typeDefs = gql`
     direction: String!
   }
 
+  type UserActivity {
+    id: ID!
+    userId: ID!
+    type: String!
+    details: JSON
+    createdAt: DateTime!
+  }
+
   type Query {
     # User queries
     me: User
     user(id: ID!): User
     users: [User!]!
+    userActivity(userId: ID!): [UserActivity!]!
 
     # Category queries
     categories: [Category!]!
@@ -187,6 +210,7 @@ export const typeDefs = gql`
 
     # User mutations
     updateUser(id: ID!, name: String, email: String, role: Role): User!
+    updateUserStatus(id: ID!, status: UserStatus!): User!
     deleteUser(id: ID!): Boolean!
 
     # Category mutations
@@ -242,5 +266,11 @@ export const typeDefs = gql`
 
     updateOrderStatus(id: ID!, status: OrderStatus!): Order!
     updatePaymentStatus(id: ID!, status: PaymentStatus!): Order!
+
+    # User activity mutations
+    recordUserActivity(userId: ID!, type: String!, details: JSON): UserActivity!
+
+    # User mutations
+    addUser(name: String!, email: String!, isAdmin: Boolean!): User!
   }
 `
