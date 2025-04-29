@@ -171,6 +171,11 @@ export const typeDefs = gql`
     direction: String!
   }
 
+  input UserOrderByInput {
+    field: String!
+    direction: String!
+  }
+
   type UserActivity {
     id: ID!
     userId: ID!
@@ -183,7 +188,7 @@ export const typeDefs = gql`
     # User queries
     me: User
     user(id: ID!): User
-    users: [User!]!
+    users(orderBy: UserOrderByInput): [User!]!
     userActivity(userId: ID!): [UserActivity!]!
 
     # Category queries

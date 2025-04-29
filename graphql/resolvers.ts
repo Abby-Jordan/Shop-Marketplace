@@ -39,13 +39,18 @@ export const resolvers = {
       });
     },
 
-    users: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
+    users: async (_: ResolverParent, { orderBy }: { orderBy?: { field: string; direction: string } }, context: Context) => {
       if (!context.user || context.user.role !== 'ADMIN') {
         throw new Error('Unauthorized');
       }
+      const orderByField = orderBy?.field || 'updatedAt'
+      const orderByDirection = orderBy?.direction || 'desc'
       return await context.prisma.user.findMany({
         include: {
           orders: true,
+        },
+        orderBy: {
+          [orderByField]: orderByDirection,
         },
       });
     },
