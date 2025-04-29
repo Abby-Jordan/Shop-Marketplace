@@ -37,11 +37,24 @@ export const typeDefs = gql`
     email: String!
     role: Role!
     status: UserStatus!
+    profileImage: String
+    phoneNumber: String
+    bio: String
+    address: Address
+    preferences: JSON
     lastLoginAt: DateTime
     lastActivityAt: DateTime
     createdAt: DateTime!
     updatedAt: DateTime!
     orders: [Order!]!
+  }
+
+  type Address {
+    street: String!
+    city: String!
+    state: String!
+    country: String!
+    zipCode: String!
   }
 
   type Category {
@@ -184,6 +197,23 @@ export const typeDefs = gql`
     createdAt: DateTime!
   }
 
+  input UpdateProfileInput {
+    name: String
+    phoneNumber: String
+    bio: String
+    profileImage: String
+    address: AddressInput
+    preferences: JSON
+  }
+
+  input AddressInput {
+    street: String
+    city: String
+    state: String
+    country: String
+    zipCode: String
+  }
+
   type Query {
     # User queries
     me: User
@@ -214,6 +244,7 @@ export const typeDefs = gql`
     logout: Boolean!
 
     # User mutations
+    updateProfile(input: UpdateProfileInput!): User!
     updateUser(id: ID!, name: String, email: String, role: Role): User!
     updateUserStatus(id: ID!, status: UserStatus!): User!
     deleteUser(id: ID!): Boolean!
@@ -277,5 +308,14 @@ export const typeDefs = gql`
 
     # User mutations
     addUser(name: String!, email: String!, isAdmin: Boolean!): User!
+
+    # Change password mutation
+    changePassword(oldPassword: String!, newPassword: String!): Boolean!
+
+    # Forgot password mutation
+    forgotPassword(email: String!): Boolean!
+
+    # Reset password mutation
+    resetPassword(token: String!, newPassword: String!): Boolean!
   }
 `

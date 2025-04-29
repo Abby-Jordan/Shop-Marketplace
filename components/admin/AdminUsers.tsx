@@ -79,7 +79,7 @@ export default function AdminUsers() {
     },
   })
 
-  const [addUser] = useMutation(ADD_USER, {
+  const [addUser, { loading: addUserLoading }] = useMutation(ADD_USER, {
     onCompleted: () => {
       toast({
         title: "User Added",
@@ -174,9 +174,9 @@ export default function AdminUsers() {
 
         <Dialog open={openDialog} onOpenChange={setOpenDialog}>
           <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-700">
+            <Button className="bg-red-600 hover:bg-red-700" disabled={addUserLoading}>
               <UserPlus className="h-4 w-4 mr-2" />
-              Add User
+              {addUserLoading ? "Adding..." : "Add User"}
             </Button>
           </DialogTrigger>
 
@@ -216,7 +216,9 @@ export default function AdminUsers() {
             </div>
 
             <DialogFooter>
-              <Button onClick={handleAddUser}>Add User</Button>
+              <Button onClick={handleAddUser} disabled={addUserLoading}>
+                {addUserLoading ? "Adding..." : "Add User"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

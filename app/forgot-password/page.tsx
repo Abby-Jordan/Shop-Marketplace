@@ -15,20 +15,22 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { useMutation } from "@apollo/client"
+import { FORGOT_PASSWORD } from "@/graphql/mutation"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const [forgotPassword, { loading }] = useMutation(FORGOT_PASSWORD)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      // Replace this with actual API call to send reset email
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await forgotPassword({ variables: { email } })
 
       toast({
         title: "Reset Link Sent",

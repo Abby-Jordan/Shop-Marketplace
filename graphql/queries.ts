@@ -58,3 +58,28 @@ export const GET_CATEGORIES_QUERY = gql`
     }
   }
 `
+
+export const GET_PROFILE = gql`
+  query GetProfile {
+    me {
+      id
+      name
+      email
+      role
+      status
+      profileImage
+      phoneNumber
+      address {
+        street
+        city
+        state
+        country
+        zipCode
+      }
+      bio
+      preferences
+      lastLoginAt
+      lastActivityAt
+    }
+  }
+`;

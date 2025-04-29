@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Eye, EyeOff } from "lucide-react"
+import { useMutation } from "@apollo/client"
+import { RESET_PASSWORD } from "@/graphql/mutation"
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
@@ -24,6 +26,10 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const [resetPassword, { loading }] = useMutation(RESET_PASSWORD)
+
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,8 +46,7 @@ export default function ResetPasswordPage() {
     setIsLoading(true)
 
     try {
-      // Replace with real API call to reset password
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await resetPassword({ variables: { token, newPassword: password } })
 
       toast({
         title: "Password Reset Successful",
