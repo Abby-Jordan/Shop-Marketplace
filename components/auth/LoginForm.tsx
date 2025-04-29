@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { CardContent, CardFooter } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/AuthContext"
+import { Role } from "../../graphql/graphql-types"
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -37,15 +38,18 @@ export default function LoginForm() {
       })
       
       // Check if redirect is to admin page and user is not admin
-      if (redirectUrl === "/admin" && user?.role !== "ADMIN") {
+      if (redirectUrl === "/admin" && user?.role !== Role.Admin) {
         router.push("/")
       } else {
         router.push(redirectUrl)
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description:
+              error instanceof Error
+                ? error.message
+                : error?.graphQLErrors?.[0]?.message || "Invalid email or password. Please try again.",
         variant: "destructive",
       })
     } finally {

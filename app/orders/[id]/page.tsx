@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/utils"
+import { OrderStatus, PaymentStatus } from "../../../graphql/graphql-types"
 
 const ORDER_QUERY = gql`
   query Order($id: ID!) {
@@ -162,32 +163,32 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case "PENDING":
+      case OrderStatus.Pending:
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-      case "PROCESSING":
+      case OrderStatus.Processing:
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-      case "SHIPPED":
+      case OrderStatus.Shipped:
         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-      case "DELIVERED":
+      case OrderStatus.Delivered:
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-      case "CANCELLED":
+      case OrderStatus.Cancelled:
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
     }
   }
 
-  const getPaymentStatusColor = (status: string) => {
+  const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
-      case "PAID":
+      case PaymentStatus.Paid:
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-      case "PENDING":
+      case PaymentStatus.Pending:
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-      case "FAILED":
+      case PaymentStatus.Failed:
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-      case "REFUNDED":
+      case PaymentStatus.Refunded:
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"

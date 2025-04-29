@@ -8,6 +8,7 @@ import AdminProducts from "@/components/admin/AdminProducts"
 import AdminOrders from "@/components/admin/AdminOrders"
 import AdminUsers from "@/components/admin/AdminUsers"
 import AdminDashboard from "@/components/admin/AdminDashboard"
+import { Role } from "../../graphql/graphql-types"
 
 export default function AdminPage() {
   const { user, isLoading } = useAuth()
@@ -19,7 +20,7 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    if (isClient && !isLoading && (!user || user.role !== "ADMIN")) {
+    if (isClient && !isLoading && (!user || user.role !== Role.Admin)) {
       router.push("/auth")
     }
   }, [user, isLoading, isClient, router])
@@ -32,7 +33,7 @@ export default function AdminPage() {
     )
   }
 
-  if (!user || user.role !== "ADMIN") {
+  if (!user || user.role !== Role.Admin) {
     return null // Will redirect in useEffect
   }
 

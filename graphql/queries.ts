@@ -83,3 +83,15 @@ export const GET_PROFILE = gql`
     }
   }
 `;
+
+export const ME_QUERY = gql`
+  query Me {
+    me {
+      id
+      name
+      email
+      role
+      status
+    }
+  }
+`

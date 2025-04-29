@@ -1,56 +1,20 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, gql } from "@apollo/client"
 import { setCookie, deleteCookie } from "cookies-next"
 import { useToast } from "@/hooks/use-toast"
-
-// GraphQL queries and mutations
-const ME_QUERY = gql`
-  query Me {
-    me {
-      id
-      name
-      email
-      role
-    }
-  }
-`
-
-const LOGIN_MUTATION = gql`
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      token
-      user {
-        id
-        name
-        email
-        role
-      }
-    }
-  }
-`
-
-const SIGNUP_MUTATION = gql`
-  mutation Signup($name: String!, $email: String!, $password: String!) {
-    signup(name: $name, email: $email, password: $password) {
-      token
-      user {
-        id
-        name
-        email
-        role
-      }
-    }
-  }
-`
+import { Role, UserStatus } from "../graphql/graphql-types"
+import { LOGIN_MUTATION, SIGNUP_MUTATION } from "../graphql/mutation"
+import { ME_QUERY } from "../graphql/queries"
 
 interface User {
   id: string
   name: string
   email: string
-  role: "USER" | "ADMIN"
+  role: Role
+  status?: string
 }
 
 interface AuthContextType {
@@ -78,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Get current user
   const { data, loading, refetch } = useQuery(ME_QUERY, {
     fetchPolicy: "network-only",
+    pollInterval: 10000,
     onCompleted: (data) => {
       if (data?.me) {
         setUser(data.me)
@@ -91,6 +56,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
     },
   })
+
+  useEffect(() => {
+    if (!loading) {
+      if (data?.me) {
+        if (data.me.status === UserStatus.Deactivated) {
+          logout()
+          toast({
+            title: "Account Deactivated",
+            description: "Your account has been deactivated. Please contact admin.",
+            variant: "destructive",
+          })
+          router.replace("/auth")
+        } else {
+          setUser(data.me)
+        }
+      } else {
+        setUser(null)
+      }
+      setIsLoading(false)
+    }
+  }, [data, loading])
 
   // Login function
   const login = async (email: string, password: string) => {

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Search, Eye } from "lucide-react"
+import { OrderStatus } from "../../graphql/graphql-types"
 
 // Mock orders data
 const mockOrders = Array.from({ length: 20 }).map((_, i) => ({
@@ -14,7 +15,7 @@ const mockOrders = Array.from({ length: 20 }).map((_, i) => ({
   customer: `Customer ${i + 1}`,
   date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
   total: Math.floor(Math.random() * 2000) + 200,
-  status: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"][Math.floor(Math.random() * 5)],
+  status: [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Shipped, OrderStatus.Delivered, OrderStatus.Cancelled][Math.floor(Math.random() * 5)],
   items: Math.floor(Math.random() * 5) + 1,
 }))
 
@@ -33,17 +34,17 @@ export default function AdminOrders() {
     return matchesSearch && matchesStatus
   })
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: OrderStatus) => {
     switch (status) {
-      case "Pending":
+      case OrderStatus.Pending:
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-      case "Processing":
+      case OrderStatus.Processing:
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-      case "Shipped":
+      case OrderStatus.Shipped:
         return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-      case "Delivered":
+      case OrderStatus.Delivered:
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-      case "Cancelled":
+      case OrderStatus.Cancelled:
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
@@ -70,11 +71,11 @@ export default function AdminOrders() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Processing">Processing</SelectItem>
-              <SelectItem value="Shipped">Shipped</SelectItem>
-              <SelectItem value="Delivered">Delivered</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
+              <SelectItem value={OrderStatus.Pending}>Pending</SelectItem>
+              <SelectItem value={OrderStatus.Processing}>Processing</SelectItem>
+              <SelectItem value={OrderStatus.Shipped}>Shipped</SelectItem>
+              <SelectItem value={OrderStatus.Delivered}>Delivered</SelectItem>
+              <SelectItem value={OrderStatus.Cancelled}>Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>

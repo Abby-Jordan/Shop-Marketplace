@@ -21,6 +21,7 @@ import { GET_USERS } from '../../graphql/queries'
 import { UPDATE_USER_STATUS, DELETE_USER, ADD_USER } from '../../graphql/mutation'
 import { User } from "@/types/user"
 import { useToast } from "@/hooks/use-toast"
+import { UserStatus } from "../../graphql/graphql-types"
 
 const statusColors = {
   ACTIVE: 'bg-green-100 text-green-800',
@@ -264,9 +265,9 @@ export default function AdminUsers() {
                           onChange={(e) => handleStatusChange(user.id, e.target.value)}
                           className="border rounded px-2 py-1"
                         >
-                          <option value="ACTIVE">Active</option>
-                          <option value="INACTIVE">Inactive</option>
-                          <option value="DEACTIVATED">Deactivated</option>
+                          <option value={UserStatus.Active}>Active</option>
+                          <option value={UserStatus.Inactive}>Inactive</option>
+                          <option value={UserStatus.Deactivated}>Deactivated</option>
                         </select>
                         <Button
                           variant="destructive"

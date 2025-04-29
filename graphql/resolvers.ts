@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import sgMail from '@sendgrid/mail';
 import { addMinutes } from 'date-fns';
 import { requireAdmin, canAccessUser } from "./permissions";
+import { Role as GraphQLRole } from "./graphql-types"
 
 const prisma = new PrismaClient()
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
@@ -144,7 +145,7 @@ export const resolvers = {
     // Order queries
     orders: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -183,7 +184,7 @@ export const resolvers = {
       }
 
       // Check if the user is the owner of the order or an admin
-      if (order.userId !== currentUser.id && currentUser.role !== "ADMIN") {
+      if (order.userId !== currentUser.id && currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -305,7 +306,7 @@ export const resolvers = {
     // User mutations
     updateUser: async (_: ResolverParent, { id, name, email, role }: { id: string; name?: string; email?: string; role?: Role }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -320,7 +321,7 @@ export const resolvers = {
     },
 
     deleteUser: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
-      if (!context.user || context.user.role !== 'ADMIN') {
+      if (!context.user || context.user.role !== GraphQLRole.Admin) {
         throw new Error('Unauthorized');
       }
     
@@ -329,7 +330,7 @@ export const resolvers = {
         throw new Error('User not found');
       }
     
-      if (user.role === 'ADMIN') {
+      if (user.role === GraphQLRole.Admin) {
         throw new Error('Cannot delete admin user');
       }
     
@@ -484,7 +485,7 @@ export const resolvers = {
     // Category mutations
     createCategory: async (_: ResolverParent, { name, description }: { name: string; description: string }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -498,7 +499,7 @@ export const resolvers = {
 
     updateCategory: async (_: ResolverParent, { id, name, description }: { id: string; name?: string; description?: string }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -513,7 +514,7 @@ export const resolvers = {
 
     deleteCategory: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -554,7 +555,7 @@ export const resolvers = {
       context: Context,
     ) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -635,7 +636,7 @@ export const resolvers = {
       context: Context,
     ) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -721,7 +722,7 @@ export const resolvers = {
 
     deleteProduct: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -805,7 +806,7 @@ export const resolvers = {
 
     updateOrderStatus: async (_: ResolverParent, { id, status }: { id: string; status: OrderStatus }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -824,7 +825,7 @@ export const resolvers = {
 
     updatePaymentStatus: async (_: ResolverParent, { id, status }: { id: string; status: PaymentStatus }, context: Context) => {
       const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
@@ -842,7 +843,7 @@ export const resolvers = {
     },
 
     updateUserStatus: async (_: any, { id, status }: { id: string; status: string }, context: Context) => {
-      if (!context.user || context.user.role !== 'ADMIN') {
+      if (!context.user || context.user.role !== GraphQLRole.Admin) {
         throw new Error('Unauthorized');
       }
 
@@ -851,7 +852,7 @@ export const resolvers = {
         throw new Error('User not found');
       }
 
-      if (user.role === 'ADMIN') {
+      if (user.role === GraphQLRole.Admin) {
         throw new Error('Cannot modify admin user status');
       }
 
@@ -885,7 +886,7 @@ export const resolvers = {
     addUser: async (_: ResolverParent, { name, email, isAdmin }: { name: string; email: string; isAdmin: boolean }, context: Context) => {
       const currentUser = await getCurrentUser();
       const saltRounds = 10;
-      if (!currentUser || currentUser.role !== "ADMIN") {
+      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized");
       }
 
@@ -893,7 +894,7 @@ export const resolvers = {
       const hashedPassword = await bcrypt.hash(temporaryPassword, saltRounds);
 
       const newUser = await prisma.user.create({
-        data: { name, email, role: isAdmin ? "ADMIN" : "USER", password: hashedPassword },
+        data: { name, email, role: isAdmin ? GraphQLRole.Admin : GraphQLRole.User, password: hashedPassword },
       });
 
       const msg = {

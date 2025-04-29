@@ -2,6 +2,7 @@ import { jwtVerify, SignJWT } from "jose"
 import { cookies } from "next/headers"
 import type { NextRequest, NextResponse } from "next/server"
 import type { User } from "@prisma/client"
+import { Role } from "../graphql/graphql-types"
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key"
 
@@ -98,5 +99,5 @@ export async function isAdmin(req: NextRequest) {
   }
 
   const payload = await verifyJwtToken(token)
-  return typeof payload?.role === 'string' && payload.role.toUpperCase() === "ADMIN"
+  return typeof payload?.role === 'string' && payload.role === Role.Admin
 }

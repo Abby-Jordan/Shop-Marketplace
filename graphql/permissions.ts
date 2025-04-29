@@ -1,4 +1,5 @@
 import { User } from "@prisma/client";
+import { Role as GraphQLRole } from "./graphql-types"
 
 export type AuthUser = User | null | undefined;
 
@@ -8,13 +9,13 @@ export function requireAuth(user: AuthUser) {
 
 export function requireAdmin(user: AuthUser) {
   requireAuth(user);
-  if (user!.role !== "ADMIN") throw new Error("Unauthorized");
+  if (user!.role !== GraphQLRole.Admin) throw new Error("Unauthorized");
 }
 
 export function canAccessUser(requestingUser: AuthUser, targetUserId: string) {
   requireAuth(requestingUser);
   if (
-    requestingUser!.role === "ADMIN" ||
+    requestingUser!.role === GraphQLRole.Admin ||
     requestingUser!.id === targetUserId
   ) {
     return true;
@@ -25,7 +26,7 @@ export function canAccessUser(requestingUser: AuthUser, targetUserId: string) {
 export function canAccessOrder(requestingUser: AuthUser, orderUserId: string) {
   requireAuth(requestingUser);
   if (
-    requestingUser!.role === "ADMIN" ||
+    requestingUser!.role === GraphQLRole.Admin ||
     requestingUser!.id === orderUserId
   ) {
     return true;
