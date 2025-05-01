@@ -95,3 +95,66 @@ export const ME_QUERY = gql`
     }
   }
 `
+
+export const ORDERS_QUERY = gql`
+  query Orders {
+    orders {
+      id
+      status
+      totalAmount
+      shippingFee
+      paymentMethod
+      paymentStatus
+      createdAt
+      user {
+        id
+        name
+        email
+      }
+      orderItems {
+        id
+        quantity
+        product {
+          name
+        }
+      }
+    }
+  }
+`
+
+export const ORDER_DETAILS_QUERY = gql`
+  query Order($id: ID!) {
+    order(id: $id) {
+      id
+      status
+      totalAmount
+      shippingFee
+      paymentMethod
+      paymentStatus
+      shippingAddress{
+        address
+        city
+        state
+        postalCode
+      }
+      createdAt
+      user {
+        id
+        name
+        email
+        phoneNumber
+      }
+      orderItems {
+        id
+        quantity
+        price
+        product {
+          id
+          name
+          description
+          image
+        }
+      }
+    }
+  }
+`

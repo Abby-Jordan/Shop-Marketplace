@@ -7,7 +7,7 @@ import { setCookie, deleteCookie } from "cookies-next"
 import { useToast } from "@/hooks/use-toast"
 import { Role, UserStatus } from "../graphql/graphql-types"
 import { LOGIN_MUTATION, SIGNUP_MUTATION } from "../graphql/mutation"
-import { ME_QUERY } from "../graphql/queries"
+import { GET_PROFILE } from "../graphql/queries"
 
 interface User {
   id: string
@@ -15,6 +15,15 @@ interface User {
   email: string
   role: Role
   status?: string
+  address?: {
+    street: string
+    city: string
+    state: string
+    zipCode: string
+  }
+  phoneNumber?: string
+  profileImage?: string
+  bio?: string
 }
 
 interface AuthContextType {
@@ -40,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [signupMutation] = useMutation(SIGNUP_MUTATION)
 
   // Get current user
-  const { data, loading, refetch } = useQuery(ME_QUERY, {
+  const { data, loading, refetch } = useQuery(GET_PROFILE, {
     fetchPolicy: "network-only",
     pollInterval: 10000,
     onCompleted: (data) => {

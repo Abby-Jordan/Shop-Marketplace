@@ -1,55 +1,60 @@
 "use client"
 
 import { useState } from "react"
+import { useQuery, gql } from "@apollo/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Search, Eye } from "lucide-react"
-import { OrderStatus } from "../../graphql/graphql-types"
-
-// Mock orders data
-const mockOrders = Array.from({ length: 20 }).map((_, i) => ({
-  id: `ORD${1000 + i}`,
-  customer: `Customer ${i + 1}`,
-  date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-  total: Math.floor(Math.random() * 2000) + 200,
-  status: [OrderStatus.Pending, OrderStatus.Processing, OrderStatus.Shipped, OrderStatus.Delivered, OrderStatus.Cancelled][Math.floor(Math.random() * 5)],
-  items: Math.floor(Math.random() * 5) + 1,
-}))
+import { OrderStatus, PaymentStatus } from "../../graphql/graphql-types"
+import { formatDate } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { ORDERS_QUERY } from "@/graphql/queries"
 
 export default function AdminOrders() {
-  const [orders, setOrders] = useState(mockOrders)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const router = useRouter()
+  const { data, loading, error } = useQuery(ORDERS_QUERY)
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center space-x-4">
+            <div className="h-12 w-12 rounded-full bg-gray-200 animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-[250px] bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-[200px] bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500">
+        Error loading orders: {error.message}
+      </div>
+    )
+  }
+
+  const orders = data.orders || []
+
+  const filteredOrders = orders.filter((order: any) => {
+    const matchesSearch = 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase())
-
+      order.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    
     const matchesStatus = statusFilter === "all" || order.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
-
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.Pending:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-      case OrderStatus.Processing:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-      case OrderStatus.Shipped:
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-      case OrderStatus.Delivered:
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-      case OrderStatus.Cancelled:
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300"
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -81,7 +86,7 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      <div className="border rounded-md">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -91,31 +96,59 @@ export default function AdminOrders() {
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Payment</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
+            {filteredOrders.map((order: any) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{order.customer}</TableCell>
-                <TableCell>{order.date}</TableCell>
-                <TableCell>{order.items}</TableCell>
-                <TableCell>₹{order.total}</TableCell>
                 <TableCell>
-                  <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                  <div>
+                    <div className="font-medium">{order.user.name}</div>
+                    <div className="text-sm text-gray-500">{order.user.email}</div>
+                  </div>
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon">
-                    <Eye className="h-4 w-4" />
+                <TableCell>{formatDate(order.createdAt)}</TableCell>
+                <TableCell>{order.orderItems.length} items</TableCell>
+                <TableCell>₹{(order.totalAmount + order.shippingFee).toFixed(2)}</TableCell>
+                <TableCell>
+                  <Badge variant={
+                    order.status === OrderStatus.Pending ? "secondary" :
+                    order.status === OrderStatus.Processing ? "default" :
+                    order.status === OrderStatus.Shipped ? "outline" :
+                    order.status === OrderStatus.Delivered ? "default" :
+                    "destructive"
+                  }>
+                    {order.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={
+                    order.paymentStatus === PaymentStatus.Pending ? "secondary" :
+                    order.paymentStatus === PaymentStatus.Paid ? "default" :
+                    order.paymentStatus === PaymentStatus.Failed ? "destructive" :
+                    "outline"
+                  }>
+                    {order.paymentStatus}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => router.push(`/admin/orders/${order.id}`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
                   </Button>
                 </TableCell>
               </TableRow>
             ))}
-
             {filteredOrders.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No orders found
                 </TableCell>
               </TableRow>

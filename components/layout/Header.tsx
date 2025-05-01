@@ -11,6 +11,7 @@ import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Role } from "../../graphql/graphql-types"
+import Image from "next/image"
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -51,9 +52,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="relative w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white font-bold">
-              <span>SMD</span>
-            </div>
+            <Image src="/logo.png" alt="Logo" width={80} height={80} />
             <span className="font-bold text-lg hidden sm:inline-block">SHREE MAHAKALI DAIRY</span>
           </Link>
 

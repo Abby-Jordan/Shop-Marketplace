@@ -66,14 +66,23 @@ export default function CartPage() {
     setIsProcessing(true)
 
     try {
-      // Create a mock shipping address (in a real app, this would come from the user's profile or a form)
+      if (!user.address) {
+        toast({
+          title: "Address Required",
+          description: "Please add an address and phone number to your profile",
+          variant: "destructive",
+        })
+        router.push("/profile")
+        return
+      }
+
       const shippingAddress = {
         fullName: user.name,
-        address: "123 Main St",
-        city: "Mumbai",
-        state: "Maharashtra",
-        postalCode: "400001",
-        phone: "9876543210",
+        address: user.address.street,
+        city: user.address.city,
+        state: user.address.state,
+        postalCode: user.address.zipCode,
+        phone: user.phoneNumber,
       }
 
       // Create order items from cart

@@ -6,7 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString)
+  const timestamp = Number(dateString)
+  const date = new Date(timestamp)
+
+  if (isNaN(date.getTime())) {
+    return "Invalid Date"
+  }
+  
   return new Intl.DateTimeFormat("en-IN", {
     year: "numeric",
     month: "long",

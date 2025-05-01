@@ -53,6 +53,19 @@ export default function ProfileClient() {
     zipCode: '',
   });
 
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    phoneNumber: '',
+    bio: '',
+    street: '',
+    city: '',
+    state: '',
+    country: '',
+    zipCode: '',
+  });
+
+
+
   useEffect(() => {
     if (profile) {
       setFormData({
@@ -64,6 +77,16 @@ export default function ProfileClient() {
         state: profile.address?.state || '',
         country: profile.address?.country || '',
         zipCode: profile.address?.zipCode || '',
+      });
+      setFormErrors({
+        name: '',
+        phoneNumber: '',
+        bio: '',
+        street: '',
+        city: '',
+        state: '',
+        country: '',
+        zipCode: '',
       });
     }
   }, [profile]);
@@ -104,10 +127,56 @@ export default function ProfileClient() {
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormErrors((prev) => ({ ...prev, [field]: '' }));
   };
+
+  const validateForm = () => {
+    const errors = {
+      name: '',
+      phoneNumber: '',
+      street: '',
+      city: '',
+      state: '',
+      country: '',
+      zipCode: '',
+    };
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+    if (!formData.phoneNumber.trim()) {
+      errors.phoneNumber = 'Phone number is required';
+    }
+    if (!formData.street.trim()) {
+      errors.street = 'Street is required';
+    }
+    if (!formData.city.trim()) {
+      errors.city = 'City is required';
+    }
+    if (!formData.state.trim()) {
+      errors.state = 'State is required';
+    }
+    if (!formData.country.trim()) {
+      errors.country = 'Country is required';
+    }
+    if (!formData.zipCode.trim()) {
+      errors.zipCode = 'Zip code is required';
+    }
+
+    setFormErrors((prev) => ({ ...prev, ...errors }));
+    return !Object.values(errors).some(error => error !== "");
+  };
+
+
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
 
     try {
       await updateProfile({
@@ -193,7 +262,9 @@ export default function ProfileClient() {
               {isEditing ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <InputGroup label="Name" id="name" value={formData.name} onChange={handleChange} />
+                  {formErrors.name && <p className="text-red-500">{formErrors.name}</p>}
                   <InputGroup label="Phone Number" id="phoneNumber" value={formData.phoneNumber} onChange={handleChange} />
+                  {formErrors.phoneNumber && <p className="text-red-500">{formErrors.phoneNumber}</p>}
                   <div>
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
@@ -205,13 +276,19 @@ export default function ProfileClient() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {['street', 'city', 'state', 'country', 'zipCode'].map((field) => (
-                      <InputGroup
-                        key={field}
-                        id={field}
-                        label={field.charAt(0).toUpperCase() + field.slice(1)}
-                        value={formData[field as keyof typeof formData]}
-                        onChange={handleChange}
-                      />
+                      <div key={field}>
+                        <InputGroup
+                          id={field}
+                          label={field.charAt(0).toUpperCase() + field.slice(1)}
+                          value={formData[field as keyof typeof formData]}
+                          onChange={handleChange}
+                        />
+                        {formErrors[field as keyof typeof formData] && (
+                          <p className="text-red-500">
+                            {formErrors[field as keyof typeof formData]}
+                          </p>
+                        )}
+                      </div>
                     ))}
                   </div>
                   <div className="flex justify-end gap-4 mt-6">
