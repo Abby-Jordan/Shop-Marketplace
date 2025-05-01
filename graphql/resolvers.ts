@@ -325,13 +325,21 @@ export const resolvers = {
         throw new Error('Unauthorized');
       }
     
-      const user = await context.prisma.user.findUnique({ where: { id } });
+      const user = await context.prisma.user.findUnique({ where: { id }, include: { orders: true } });
       if (!user) {
         throw new Error('User not found');
       }
     
       if (user.role === GraphQLRole.Admin) {
         throw new Error('Cannot delete admin user');
+      }
+
+      const hasIncompleteOrders = user.orders.some(
+        (order: Order) => order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.CANCELLED
+      );
+    
+      if (hasIncompleteOrders) {
+        throw new Error('Cannot delete user with pending or uncompleted orders.');
       }
     
       // Delete address first (if exists)

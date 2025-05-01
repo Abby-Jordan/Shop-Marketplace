@@ -326,17 +326,54 @@ export default function AdminProducts() {
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result as string })
-        setFormErrors({ ...formErrors, image: "" })
-      }
-      reader.readAsDataURL(file)
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0]
+  //   if (file) {
+  //     const reader = new FileReader()
+  //     console.log(reader)
+  //     reader.onloadend = () => {
+  //       setFormData({ ...formData, image: reader.result as string })
+  //       setFormErrors({ ...formErrors, image: "" })
+  //     }
+  //     reader.readAsDataURL(file)
+  //   }
+  // }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formDataFile = new FormData();
+    formDataFile.append('file', file);
+
+    try {
+
+      const response = await fetch('/api/product/image', {
+        method: 'POST',
+        body: formDataFile,
+        credentials: 'include',
+        headers: {
+          'categoryId': formData.categoryId
+        }
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+      const data = await response.json();
+
+      setFormData({ ...formData, image: data.imageUrl as string })
+      setFormErrors({ ...formErrors, image: "" })
+
+      toast({
+        title: 'Product image updated successfully',
+        description: 'Product image updated successfully',
+      })
+    } catch {
+      toast({
+        title: 'Failed to upload image',
+        description: 'Failed to upload image',
+      })
     }
-  }
+  };
 
   const addSize = () => {
     setFormData({

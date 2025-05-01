@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PROFILE } from '@/graphql/queries';
 import { UPDATE_PROFILE } from '@/graphql/mutation';
 import { Role } from '@prisma/client';
 import { client } from '@/lib/apollo-client';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   id: string;
@@ -41,6 +41,8 @@ export default function ProfileClient() {
   const [updateProfile] = useMutation(UPDATE_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
   const profile = data?.me;
+
+  const { toast } = useToast()
 
   const [formData, setFormData] = useState({
     name: '',
@@ -119,9 +121,15 @@ export default function ProfileClient() {
         refetchQueries: [{ query: GET_PROFILE }],
       });
 
-      toast.success('Profile image updated successfully');
+      toast({
+        title: 'Profile image updated successfully',
+        description: 'Profile image updated successfully',
+      })
     } catch {
-      toast.error('Failed to upload image');
+      toast({
+        title: 'Failed to upload image',
+        description: 'Failed to upload image',
+      })
     }
   };
 
@@ -198,9 +206,15 @@ export default function ProfileClient() {
       });
 
       setIsEditing(false);
-      toast.success('Profile updated successfully');
+      toast({
+        title: 'Profile updated successfully',
+        description: 'Profile updated successfully',
+      })
     } catch {
-      toast.error('Failed to update profile');
+      toast({
+        title: 'Failed to update profile',
+        description: 'Failed to update profile',
+      })
     }
   };
 
