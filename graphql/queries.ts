@@ -158,3 +158,19 @@ export const ORDER_DETAILS_QUERY = gql`
     }
   }
 `
+
+export const DASHBOARD_QUERY = gql`
+  query DashboardQuery($take: Int, $orderBy: OrderOrderByInput, $where: UserWhereInput) {
+    orderCount
+    userCount(where: $where)
+    productCount
+    orders(take: $take, orderBy: $orderBy) {
+      id
+      status
+      totalAmount
+      user {
+       name
+      }
+    }
+}
+` 

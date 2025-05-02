@@ -57,6 +57,11 @@ export const typeDefs = gql`
     zipCode: String!
   }
 
+  input UserWhereInput {
+    status: UserStatus
+  }
+
+
   type Category {
     id: ID!
     name: String!
@@ -174,6 +179,19 @@ export const typeDefs = gql`
     size: String
   }
 
+  input OrderWhereInput {
+    status: OrderStatus
+  }
+
+  input OrderOrderByInput {
+    createdAt: SortDirection
+  }
+
+  enum SortDirection {
+    asc
+    desc
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -218,8 +236,9 @@ export const typeDefs = gql`
     # User queries
     me: User
     user(id: ID!): User
-    users(orderBy: UserOrderByInput): [User!]!
+    users(orderBy: UserOrderByInput, where: UserWhereInput): [User!]!
     userActivity(userId: ID!): [UserActivity!]!
+    userCount(where: UserWhereInput): Int!
 
     # Category queries
     categories: [Category!]!
@@ -230,11 +249,13 @@ export const typeDefs = gql`
     product(id: ID!): Product
     productsByCategory(categoryId: ID!): [Product!]!
     searchProducts(query: String!): [Product!]!
-
+    productCount: Int!
     # Order queries
-    orders: [Order!]!
+    orders(take: Int, orderBy: OrderOrderByInput): [Order!]!
     order(id: ID!): Order
     myOrders: [Order!]!
+    orderCount(where: OrderWhereInput): Int!
+
   }
 
   type Mutation {

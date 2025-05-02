@@ -281,6 +281,10 @@ export type OrderItemInput = {
   size?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type OrderOrderByInput = {
+  createdAt?: InputMaybe<SortDirection>;
+};
+
 export enum OrderStatus {
   Cancelled = 'CANCELLED',
   Delivered = 'DELIVERED',
@@ -288,6 +292,10 @@ export enum OrderStatus {
   Processing = 'PROCESSING',
   Shipped = 'SHIPPED'
 }
+
+export type OrderWhereInput = {
+  status?: InputMaybe<OrderStatus>;
+};
 
 export enum PaymentStatus {
   Failed = 'FAILED',
@@ -343,13 +351,16 @@ export type Query = {
   me?: Maybe<User>;
   myOrders: Array<Order>;
   order?: Maybe<Order>;
+  orderCount: Scalars['Int']['output'];
   orders: Array<Order>;
   product?: Maybe<Product>;
+  productCount: Scalars['Int']['output'];
   products: Array<Product>;
   productsByCategory: Array<Product>;
   searchProducts: Array<Product>;
   user?: Maybe<User>;
   userActivity: Array<UserActivity>;
+  userCount: Scalars['Int']['output'];
   users: Array<User>;
 };
 
@@ -361,6 +372,17 @@ export type QueryCategoryArgs = {
 
 export type QueryOrderArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryOrderCountArgs = {
+  where?: InputMaybe<OrderWhereInput>;
+};
+
+
+export type QueryOrdersArgs = {
+  orderBy?: InputMaybe<OrderOrderByInput>;
+  take?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -394,8 +416,14 @@ export type QueryUserActivityArgs = {
 };
 
 
+export type QueryUserCountArgs = {
+  where?: InputMaybe<UserWhereInput>;
+};
+
+
 export type QueryUsersArgs = {
   orderBy?: InputMaybe<UserOrderByInput>;
+  where?: InputMaybe<UserWhereInput>;
 };
 
 export type Review = {
@@ -430,6 +458,11 @@ export type ShippingAddressInput = {
   postalCode: Scalars['String']['input'];
   state: Scalars['String']['input'];
 };
+
+export enum SortDirection {
+  Asc = 'asc',
+  Desc = 'desc'
+}
 
 export type UpdateProfileInput = {
   address?: InputMaybe<AddressInput>;
@@ -478,3 +511,7 @@ export enum UserStatus {
   Deactivated = 'DEACTIVATED',
   Inactive = 'INACTIVE'
 }
+
+export type UserWhereInput = {
+  status?: InputMaybe<UserStatus>;
+};

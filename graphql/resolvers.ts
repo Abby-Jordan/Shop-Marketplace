@@ -43,17 +43,25 @@ export const resolvers = {
       });
     },
 
-    users: async (_: ResolverParent, { orderBy }: { orderBy?: { field: string; direction: string } }, context: Context) => {
+    users: async (_: ResolverParent, { orderBy, where }: { orderBy?: { field: string; direction: string }, where?: any }, context: Context) => {
       requireAdmin(context.user);
       const orderByField = orderBy?.field || 'updatedAt'
       const orderByDirection = orderBy?.direction || 'desc'
       return await context.prisma.user.findMany({
+        where: where || {},
         include: {
           orders: true,
         },
         orderBy: {
           [orderByField]: orderByDirection,
         },
+      });
+    },
+
+    userCount: async (_: any, { where }: { where?: any }, context: Context) => {
+      requireAdmin(context.user);
+      return await context.prisma.user.count({
+        where: where || {},
       });
     },
 
@@ -96,6 +104,11 @@ export const resolvers = {
         console.error('Error in products query:', error)
         throw new Error('Failed to fetch products')
       }
+    },
+
+    productCount: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
+      requireAdmin(context.user);
+      return await context.prisma.product.count();
     },
 
     product: async (_: ResolverParent, { id }: { id: string }) => {
@@ -143,13 +156,17 @@ export const resolvers = {
     },
 
     // Order queries
-    orders: async (_: ResolverParent, __: ResolverArgs, context: Context) => {
+    orders: async (_: ResolverParent, args: { take?: number, orderBy?: { createdAt?: "asc" | "desc" } }, context: Context) => {
       const currentUser = await getCurrentUser()
       if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
-
+    
+      const { take , orderBy} = args
+    
       return prisma.order.findMany({
+        take,
+        orderBy: orderBy || { createdAt: "desc" },
         include: {
           user: true,
           orderItems: {
@@ -159,6 +176,13 @@ export const resolvers = {
           },
         },
       })
+    },
+
+    orderCount: async (_: any, { where }: { where?: any }, context: Context) => {
+      requireAdmin(context.user);
+      return await context.prisma.order.count({
+        where: where || {},
+      });
     },
 
     order: async (_: ResolverParent, { id }: { id: string }, context: Context) => {

@@ -3,6 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useQuery } from "@apollo/client"
+import { DASHBOARD_QUERY } from "@/graphql/queries"
+import { Order, SortDirection, UserStatus } from "@/graphql/graphql-types"
 
 const salesData = [
   { name: "Jan", sales: 4000 },
@@ -21,6 +24,21 @@ const categoryData = [
 ]
 
 export default function AdminDashboard() {
+  const { data, loading, error } = useQuery(DASHBOARD_QUERY, {
+    variables: {
+      take: 5,
+      orderBy: {
+        createdAt: SortDirection.Desc,
+      },
+      where: {
+        status: UserStatus.Active,
+      },
+    },
+  })
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error.message}</div>
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -39,7 +57,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm font-medium">Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">{data.orderCount}</div>
             <p className="text-xs text-muted-foreground">+12.4% from last month</p>
           </CardContent>
         </Card>
@@ -49,7 +67,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm font-medium">Products</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">36</div>
+            <div className="text-2xl font-bold">{data.productCount}</div>
             <p className="text-xs text-muted-foreground">+2 new this month</p>
           </CardContent>
         </Card>
@@ -59,7 +77,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-sm font-medium">Active Users</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+249</div>
+            <div className="text-2xl font-bold">+{data.userCount}</div>
             <p className="text-xs text-muted-foreground">+18.1% from last month</p>
           </CardContent>
         </Card>
@@ -116,15 +134,15 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
+              {data.orders.map((order: Order, i: number) => (
                 <div key={i} className="flex justify-between items-center border-b pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">Order #{1000 + i}</p>
-                    <p className="text-sm text-gray-500">Customer: John Doe</p>
+                    <p className="font-medium">Order #{order.id}</p>
+                    <p className="text-sm text-gray-500">Customer: {order.user?.name}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">₹{(Math.random() * 1000).toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">Just now</p>
+                    <p className="font-medium">₹{order.totalAmount}</p>
+                    {/* <p className="text-sm text-gray-500">Just now</p> */}
                   </div>
                 </div>
               ))}
