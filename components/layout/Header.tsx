@@ -83,16 +83,18 @@ const Header = () => {
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemsCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
-                    {cartItemsCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            {(!user || (user && user.role !== Role.Admin)) && (
+              <Link href="/cart">
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemsCount > 0 && (
+                    <Badge className="absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.25rem] h-5 flex items-center justify-center">
+                      {cartItemsCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {user ? (
               <div className="relative group">
@@ -106,12 +108,14 @@ const Header = () => {
                   >
                     Profile
                   </Link>
-                  <Link
-                    href="/orders"
-                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    Orders
-                  </Link>
+                  {(!user || (user && user?.role !== Role.Admin)) &&
+                    <Link
+                      href="/orders"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Orders
+                    </Link>
+                  }
                   {user.role === Role.Admin && (
                     <Link
                       href="/admin"

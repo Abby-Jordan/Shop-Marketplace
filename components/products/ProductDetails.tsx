@@ -1,12 +1,14 @@
 "use client"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { Product } from "@/types/product"
+import { useAuth } from "@/context/AuthContext"
 
 interface ProductDetailsProps {
   product: Product
 }
 
 export default function ProductDetails({ product }: ProductDetailsProps) {
+  const { user } = useAuth()
   return (
     <Tabs defaultValue="description" className="w-full">
       <TabsList className="grid w-full grid-cols-3">

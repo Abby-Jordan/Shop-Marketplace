@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/context/CartContext"
 import { useToast } from "@/hooks/use-toast"
 import type { Product } from "@/types/product"
-
+import { Role } from "@/graphql/graphql-types"
+import { useAuth } from "@/context/AuthContext"
 interface ProductCardProps {
   product: Product
 }
@@ -16,6 +17,7 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addToCart, removeFromCart, getItemQuantity } = useCart()
   const { toast } = useToast()
+  const { user } = useAuth()
   const quantity = getItemQuantity(product.id)
 
   const handleAddToCart = () => {
@@ -58,7 +60,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {product.discountedPrice && <span className="text-gray-500 line-through text-sm">₹{product.price}</span>}
           </div>
 
-          {quantity === 0 ? (
+          {(!user || (user && user.role !== Role.Admin)) && (quantity === 0 ? (
             <Button size="sm" onClick={handleAddToCart} className="bg-red-600 hover:bg-red-700">
               <ShoppingCart className="h-4 w-4 mr-1" />
               Add
@@ -79,7 +81,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
-          )}
+          ))}
         </div>
       </CardContent>
     </Card>
