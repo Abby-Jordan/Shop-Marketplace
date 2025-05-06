@@ -48,83 +48,100 @@ const PRODUCT_FRAGMENT = gql`
 
 // Get products by category
 export async function getProductsByCategory(categoryId: string, limit?: number): Promise<Product[]> {
-  const { data } = await client.query({
-    query: gql`
-      query ProductsByCategory($categoryId: ID!) {
-        productsByCategory(categoryId: $categoryId) {
-          ...ProductFields
-        }
-      }
-      ${PRODUCT_FRAGMENT}
-    `,
-    variables: { categoryId },
-  })
-
-  let products = data.productsByCategory
-
-  if (limit) {
-    products = products.slice(0, limit)
-  }
-
-  return products
-}
-
-// Get product by ID
-export async function getProductById(id: string): Promise<Product | null> {
-  const { data } = await client.query({
-    query: gql`
-      query Product($id: ID!) {
-        product(id: $id) {
-          ...ProductFields
-        }
-      }
-      ${PRODUCT_FRAGMENT}
-    `,
-    variables: { id },
-    fetchPolicy: 'network-only',
-  })
-
-  return data.product
-}
-
-// Get related products
-export async function getRelatedProducts(productId: string, categoryId: string, limit = 4): Promise<Product[]> {
-  const { data } = await client.query({
-    query: gql`
-      query ProductsByCategory($categoryId: ID!) {
-        productsByCategory(categoryId: $categoryId) {
-          ...ProductFields
-        }
-      }
-      ${PRODUCT_FRAGMENT}
-    `,
-    variables: { categoryId },
-  })
-
-  // Filter out the current product and limit the results
-  let relatedProducts = data.productsByCategory.filter((product: Product) => product.id !== productId).slice(0, limit)
-
-  // If we don't have enough related products, we could fetch some from other categories
-  if (relatedProducts.length < limit) {
-    const { data: moreData } = await client.query({
+  try {
+    const { data } = await client.query({
       query: gql`
-        query Products {
-          products {
+        query ProductsByCategory($categoryId: ID!) {
+          productsByCategory(categoryId: $categoryId) {
             ...ProductFields
           }
         }
         ${PRODUCT_FRAGMENT}
       `,
+      variables: { categoryId },
     })
 
-    const otherProducts = moreData.products
-      .filter((product: Product) => product.id !== productId && product.categoryId !== categoryId)
-      .slice(0, limit - relatedProducts.length)
+    let products = data.productsByCategory || []
 
-    relatedProducts = [...relatedProducts, ...otherProducts]
+    if (limit) {
+      products = products.slice(0, limit)
+    }
+
+    return products
+  } catch (error) {
+    console.error('Error fetching products by category:', error)
+    return []
   }
+}
 
-  return relatedProducts
+// Get product by ID
+export async function getProductById(id: string): Promise<Product | null> {
+  try {
+    const { data } = await client.query({
+      query: gql`
+        query Product($id: ID!) {
+          product(id: $id) {
+            ...ProductFields
+          }
+        }
+        ${PRODUCT_FRAGMENT}
+      `,
+      variables: { id },
+      fetchPolicy: 'no-cache',
+    })
+
+    return data.product || null
+  } catch (error) {
+    console.error('Error fetching product by ID:', error)
+    return null
+  }
+}
+
+// Get related products
+export async function getRelatedProducts(productId: string, categoryId: string, limit = 4): Promise<Product[]> {
+  try {
+    const { data } = await client.query({
+      query: gql`
+        query ProductsByCategory($categoryId: ID!) {
+          productsByCategory(categoryId: $categoryId) {
+            ...ProductFields
+          }
+        }
+        ${PRODUCT_FRAGMENT}
+      `,
+      variables: { categoryId },
+    })
+
+    // Filter out the current product and limit the results
+    let relatedProducts = (data.productsByCategory || [])
+      .filter((product: Product) => product.id !== productId)
+      .slice(0, limit)
+
+    // If we don't have enough related products, we could fetch some from other categories
+    if (relatedProducts.length < limit) {
+      const { data: moreData } = await client.query({
+        query: gql`
+          query Products {
+            products {
+              ...ProductFields
+            }
+          }
+          ${PRODUCT_FRAGMENT}
+        `,
+      })
+
+      const otherProducts = (moreData.products || [])
+        .filter((product: Product) => product.id !== productId && product.categoryId !== categoryId)
+        .slice(0, limit - relatedProducts.length)
+
+      relatedProducts = [...relatedProducts, ...otherProducts]
+    }
+
+    return relatedProducts
+  } catch (error) {
+    console.error('Error fetching related products:', error)
+    return []
+  }
 }
 
 // Get category information

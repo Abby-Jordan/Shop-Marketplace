@@ -10,8 +10,11 @@ const httpLink = createHttpLink({
   uri: isServer
     ? process.env.NEXT_PUBLIC_API_URL + "/api/graphql"
     : "/api/graphql",
+  // Add fetch options to handle build-time requests
+  fetchOptions: {
+    cache: 'no-store',
+  },
 })
-
 
 // Create an auth link
 const authLink = setContext((_, { headers }) => {
@@ -46,10 +49,12 @@ export const client = new ApolloClient({
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
     },
     query: {
-      fetchPolicy: 'network-only',
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
     },
   },
   connectToDevTools: true, // Enable Apollo DevTools

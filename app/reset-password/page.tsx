@@ -18,7 +18,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { useMutation } from "@apollo/client"
 import { RESET_PASSWORD } from "@/graphql/mutation"
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordPage({ params }: { params: { token: string } }) {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -28,8 +28,8 @@ export default function ResetPasswordPage() {
   const router = useRouter()
   const [resetPassword, { loading }] = useMutation(RESET_PASSWORD)
 
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token')
+  // const searchParams = useSearchParams();
+  const token = params.token
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
