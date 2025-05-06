@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma db seed && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
     "codegen": "graphql-codegen --config codegen.yml",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

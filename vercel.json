@@ -1,6 +1,15 @@
 {
-  "buildCommand": "prisma generate && next build",
+  "version": 2,
+  "buildCommand": "prisma generate && prisma db seed && next build",
   "installCommand": "yarn install",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "env": {
+    "PRISMA_GENERATE_DATAPROXY": "true"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database_url"
+    }
+  }
 } 
