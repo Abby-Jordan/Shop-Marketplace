@@ -672,7 +672,7 @@ export const resolvers = {
         throw new Error("Not authorized")
       }
 
-      // Start a transaction to handle related data
+      // Start a transaction with increased timeout
       return prisma.$transaction(async (tx) => {
         // Update the product
         const product = await tx.product.update({
@@ -690,53 +690,47 @@ export const resolvers = {
           },
         })
 
-        // Update sizes if provided
+        // Handle related data updates in parallel
+        const updatePromises = []
+
         if (sizes) {
-          // Delete existing sizes
-          await tx.productSize.deleteMany({
-            where: { productId: id },
-          })
-
-          // Create new sizes
-          await tx.productSize.createMany({
-            data: sizes.map((size) => ({
-              ...size,
-              productId: id,
-            })),
-          })
+          updatePromises.push(
+            tx.productSize.deleteMany({ where: { productId: id } }),
+            tx.productSize.createMany({
+              data: sizes.map((size) => ({
+                ...size,
+                productId: id,
+              })),
+            })
+          )
         }
 
-        // Update nutrition facts if provided
         if (nutritionFacts) {
-          // Delete existing nutrition facts
-          await tx.nutritionFact.deleteMany({
-            where: { productId: id },
-          })
-
-          // Create new nutrition facts
-          await tx.nutritionFact.createMany({
-            data: nutritionFacts.map((fact) => ({
-              ...fact,
-              productId: id,
-            })),
-          })
+          updatePromises.push(
+            tx.nutritionFact.deleteMany({ where: { productId: id } }),
+            tx.nutritionFact.createMany({
+              data: nutritionFacts.map((fact) => ({
+                ...fact,
+                productId: id,
+              })),
+            })
+          )
         }
 
-        // Update features if provided
         if (features) {
-          // Delete existing features
-          await tx.feature.deleteMany({
-            where: { productId: id },
-          })
-
-          // Create new features
-          await tx.feature.createMany({
-            data: features.map((feature) => ({
-              ...feature,
-              productId: id,
-            })),
-          })
+          updatePromises.push(
+            tx.feature.deleteMany({ where: { productId: id } }),
+            tx.feature.createMany({
+              data: features.map((feature) => ({
+                ...feature,
+                productId: id,
+              })),
+            })
+          )
         }
+
+        // Execute all updates in parallel
+        await Promise.all(updatePromises)
 
         // Return the updated product with all relations
         return tx.product.findUnique({
@@ -749,6 +743,8 @@ export const resolvers = {
             reviews: true,
           },
         })
+      }, {
+        timeout: 10000 // Increase timeout to 10 seconds
       })
     },
 

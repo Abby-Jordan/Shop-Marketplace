@@ -1,38 +1,26 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
+import { getAllCategories } from "@/lib/api"
+import type { Category } from "@/graphql/graphql-types"
 
-const categories = [
-  {
-    id: "dairy",
-    name: "Dairy Products",
-    description: "Fresh milk, curd, paneer, and more",
-    image: "/placeholder.svg?height=300&width=300",
-    color: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20",
-  },
-  {
-    id: "sweets",
-    name: "Sweets",
-    description: "Traditional Indian sweets and desserts",
-    image: "/placeholder.svg?height=300&width=300",
-    color: "from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20",
-  },
-  {
-    id: "namkeen",
-    name: "Namkeen",
-    description: "Savory snacks and mixtures",
-    image: "/placeholder.svg?height=300&width=300",
-    color: "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20",
-  },
-]
+const categoryColors = {
+  dairy: "from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20",
+  sweets: "from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20",
+  namkeen: "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20",
+}
 
-export default function CategorySection() {
+export default async function CategorySection() {
+  const categories = await getAllCategories()
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {categories.map((category) => (
+      {categories.map((category: Category) => (
         <Link key={category.id} href={`/category/${category.id}`}>
           <Card
-            className={`overflow-hidden transition-transform duration-300 hover:scale-105 bg-gradient-to-br ${category.color} border-0`}
+            className={`overflow-hidden transition-transform duration-300 hover:scale-105 bg-gradient-to-br ${
+              categoryColors[category.name.toLowerCase() as keyof typeof categoryColors] || "from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20"
+            } border-0`}
           >
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center">
