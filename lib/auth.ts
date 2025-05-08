@@ -57,7 +57,7 @@ export function setAuthCookie(res: NextResponse, token: string) {
     name: "token",
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.ENVIRONMENT === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: "/",
@@ -71,7 +71,7 @@ export function removeAuthCookie(res: NextResponse) {
     name: "token",
     value: "",
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.ENVIRONMENT === "production",
     sameSite: "lax",
     maxAge: 0,
     path: "/",
