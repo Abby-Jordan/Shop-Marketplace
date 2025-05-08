@@ -1,15 +1,24 @@
-import { Suspense } from "react"
-import Hero from "@/components/home/Hero"
-import CategorySection from "@/components/home/CategorySection"
-import FeaturedProducts from "@/components/home/FeaturedProducts"
-import ProductSkeleton from "@/components/products/ProductSkeleton"
-import AIChatButton from "@/components/chat/AIChatButton"
-import { getAllCategories } from "@/lib/api"
-import type { Category } from "@/graphql/graphql-types"
+import { Suspense } from "react";
+import Hero from "@/components/home/Hero";
+import CategorySection from "@/components/home/CategorySection";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
+import ProductSkeleton from "@/components/products/ProductSkeleton";
+import AIChatButton from "@/components/chat/AIChatButton";
+import { getAllCategories } from "@/lib/api";
+import type { Category } from "@/graphql/graphql-types";
 
-export default async function Home() {
-  const categories = await getAllCategories()
+export async function getServerSideProps() {
+  // Fetch categories during server-side rendering
+  const categories = await getAllCategories();
 
+  return {
+    props: {
+      categories,
+    },
+  };
+}
+
+export default function Home({ categories }: { categories: Category[] }) {
   return (
     <div className="container mx-auto px-4 py-8">
       <Hero />
@@ -30,5 +39,5 @@ export default async function Home() {
 
       <AIChatButton />
     </div>
-  )
+  );
 }
