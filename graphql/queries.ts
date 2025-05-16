@@ -174,3 +174,14 @@ export const DASHBOARD_QUERY = gql`
     }
 }
 ` 
+
+export const GET_CATEGORIES = gql`
+query GetCategories {
+    categories {
+      id
+      name
+      description
+      image
+    }
+  }
+`;

@@ -18,16 +18,18 @@ export default async function Home() {
 
         <section className="my-12">
           <h2 className="text-3xl font-bold mb-8 text-center">Our Categories</h2>
-          <CategorySection />
+          <CategorySection/>
         </section>
 
         {categories.map((category: Category) => (
-          <section key={category.id} className="my-12">
-            <h2 className="text-3xl font-bold mb-8 text-center">{category.name}</h2>
-            <Suspense fallback={<ProductSkeleton count={4} />}>
+          category.products && category.products.length > 0 && (
+            <section key={category.id} className="my-12">
+              <h2 className="text-3xl font-bold mb-8 text-center">{category.name}</h2>
+              <Suspense fallback={<ProductSkeleton count={4} />}>
               <FeaturedProducts category={category.id} count={4} />
             </Suspense>
-          </section>
+            </section>
+          )
         ))}
 
         <AIChatButton />

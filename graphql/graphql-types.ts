@@ -41,10 +41,19 @@ export type AuthPayload = {
 
 export type Category = {
   __typename?: 'Category';
+  createdAt: Scalars['DateTime']['output'];
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  image?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   products?: Maybe<Array<Product>>;
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type CreateCategoryInput = {
+  description: Scalars['String']['input'];
+  image?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
 };
 
 export type Feature = {
@@ -106,8 +115,7 @@ export type MutationChangePasswordArgs = {
 
 
 export type MutationCreateCategoryArgs = {
-  description: Scalars['String']['input'];
-  name: Scalars['String']['input'];
+  input: CreateCategoryInput;
 };
 
 
@@ -183,9 +191,8 @@ export type MutationSignupArgs = {
 
 
 export type MutationUpdateCategoryArgs = {
-  description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
-  name?: InputMaybe<Scalars['String']['input']>;
+  input: UpdateCategoryInput;
 };
 
 
@@ -463,6 +470,12 @@ export enum SortDirection {
   Asc = 'asc',
   Desc = 'desc'
 }
+
+export type UpdateCategoryInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+};
 
 export type UpdateProfileInput = {
   address?: InputMaybe<AddressInput>;

@@ -26,6 +26,14 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Prevent admin access to cart-related routes
+  if (pathname === "/cart" || pathname.startsWith("/checkout")) {
+    const isAdminUser = await isAdmin(request);
+    if (isAdminUser) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  }
+
   // Authenticated routes
   if (pathname.startsWith("/profile") || pathname.startsWith("/orders") || pathname.startsWith("/checkout")) {
     const isAuthUser = await isAuthenticated(request);
@@ -38,5 +46,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth", "/admin/:path*", "/profile/:path*", "/orders/:path*", "/checkout/:path*"],
+  matcher: ["/auth", "/admin/:path*", "/profile/:path*", "/orders/:path*", "/checkout/:path*", "/cart"],
 }

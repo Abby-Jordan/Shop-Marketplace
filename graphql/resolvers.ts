@@ -75,7 +75,11 @@ export const resolvers = {
 
     // Category queries
     categories: async () => {
-      return prisma.category.findMany()
+      return prisma.category.findMany({
+        include: {
+          products: true,
+        },
+      })
     },
 
     category: async (_: ResolverParent, { id }: { id: string }) => {
@@ -515,43 +519,37 @@ export const resolvers = {
     // },
 
     // Category mutations
-    createCategory: async (_: ResolverParent, { name, description }: { name: string; description: string }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
-        throw new Error("Not authorized")
-      }
-
+    createCategory: async (_: ResolverParent, { input }: { input: { name: string; description: string; image?: string } }, context: Context) => {
+      requireAdmin(context.user);
       return prisma.category.create({
         data: {
-          name,
-          description,
+          name: input.name,
+          description: input.description,
+          ...(input.image && { image: input.image }),
         },
-      })
+      });
     },
 
-    updateCategory: async (_: ResolverParent, { id, name, description }: { id: string; name?: string; description?: string }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
-        throw new Error("Not authorized")
-      }
+    updateCategory: async (_: ResolverParent, { id, input }: { id: string; input: { name?: string; description?: string; image?: string } }, context: Context) => {
+      requireAdmin(context.user);
+      const updateData: any = {};
+      
+      if (input.name) updateData.name = input.name;
+      if (input.description) updateData.description = input.description;
+      if (input.image !== undefined) updateData.image = input.image;
 
       return prisma.category.update({
         where: { id },
-        data: {
-          ...(name && { name }),
-          ...(description && { description }),
-        },
-      })
+        data: updateData,
+      });
     },
 
     deleteCategory: async (_: ResolverParent, { id }: { id: string }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
-        throw new Error("Not authorized")
-      }
-
-      await prisma.category.delete({ where: { id } })
-      return true
+      requireAdmin(context.user);
+      await prisma.category.delete({
+        where: { id },
+      });
+      return true;
     },
 
     // Product mutations

@@ -17,16 +17,16 @@ export default function Hero() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button size="lg" className="bg-red-600 hover:bg-red-700">
-                <Link href="/category/dairy">Shop Dairy</Link>
+                Shop Dairy
               </Button>
               <Button size="lg" variant="outline">
-                <Link href="/category/sweets">Explore Sweets</Link>
+                Explore Sweets
               </Button>
             </div>
           </div>
           <div className="relative h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden">
             <Image
-              src="/placeholder.svg?height=600&width=800"
+              src="/heroplaceholder.svg?height=600&width=800"
               alt="Dairy and Sweets Collection"
               fill
               className="object-cover"

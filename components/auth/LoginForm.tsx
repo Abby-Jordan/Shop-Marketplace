@@ -37,12 +37,14 @@ export default function LoginForm() {
         description: "Welcome back to Shree Mahakali Dairy!",
       })
       
-      // Check if redirect is to admin page and user is not admin
-      if (redirectUrl === "/admin" && user?.role !== Role.Admin) {
-        router.push("/")
-      } else {
-        router.push(redirectUrl)
-      }
+      // Wait for user state to update
+      setTimeout(() => {
+        if (user?.role === Role.Admin) {
+          router.push("/admin")
+        } else {
+          router.push(redirectUrl)
+        }
+      }, 100)
     } catch (error: any) {
       toast({
         title: "Login Failed",
