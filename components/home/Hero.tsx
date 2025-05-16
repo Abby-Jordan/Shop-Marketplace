@@ -26,7 +26,7 @@ export default function Hero() {
           </div>
           <div className="relative h-64 sm:h-80 md:h-96 rounded-lg overflow-hidden">
             <Image
-              src="/placeholder.svg?height=600&width=800"
+              src="/heroplaceholder.svg?height=600&width=800"
               alt="Dairy and Sweets Collection"
               fill
               className="object-cover"

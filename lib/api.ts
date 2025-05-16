@@ -163,7 +163,7 @@ export async function getCategoryInfo(categoryId: string) {
 }
 
 // Get all categories
-export async function getAllCategories() {
+export async function getAllCategories(limit?: number) {
   const { data } = await client.query({
     query: gql`
       query Categories {
@@ -171,12 +171,25 @@ export async function getAllCategories() {
           id
           name
           description
+          image
+          products {
+            id
+            name
+            description
+            image
+            
+          }
         }
       }
     `,
   })
+  let categories = data.categories
 
-  return data.categories
+  if (limit) {
+    categories = categories.slice(0, limit)
+  }
+
+  return categories
 }
 
 // Search products

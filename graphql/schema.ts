@@ -66,7 +66,10 @@ export const typeDefs = gql`
     id: ID!
     name: String!
     description: String!
+    image: String
     products: [Product!]
+    createdAt: DateTime!
+    updatedAt: DateTime!
   }
 
   type ProductSize {
@@ -232,6 +235,18 @@ export const typeDefs = gql`
     zipCode: String
   }
 
+  input CreateCategoryInput {
+    name: String!
+    description: String!
+    image: String
+  }
+
+  input UpdateCategoryInput {
+    name: String
+    description: String
+    image: String
+  }
+
   type Query {
     # User queries
     me: User
@@ -271,8 +286,8 @@ export const typeDefs = gql`
     deleteUser(id: ID!): Boolean!
 
     # Category mutations
-    createCategory(name: String!, description: String!): Category!
-    updateCategory(id: ID!, name: String, description: String): Category!
+    createCategory(input: CreateCategoryInput!): Category!
+    updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
     deleteCategory(id: ID!): Boolean!
 
     # Product mutations

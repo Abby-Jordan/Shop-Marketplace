@@ -10,8 +10,8 @@ const categoryColors = {
   namkeen: "from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20",
 }
 
-export default async function CategorySection() {
-  const categories = await getAllCategories()
+export default async function CategorySection({ count }: { count?: number } ) {
+  const categories = await getAllCategories(count)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
