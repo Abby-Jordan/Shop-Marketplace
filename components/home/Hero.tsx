@@ -17,10 +17,10 @@ export default function Hero() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button size="lg" className="bg-red-600 hover:bg-red-700">
-                <Link href="/category/dairy">Shop Dairy</Link>
+                Shop Dairy
               </Button>
               <Button size="lg" variant="outline">
-                <Link href="/category/sweets">Explore Sweets</Link>
+                Explore Sweets
               </Button>
             </div>
           </div>
