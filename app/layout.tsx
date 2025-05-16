@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { ApolloWrapper } from "@/components/ApolloWrapper"
 import { AuthProvider } from "@/context/AuthContext"
-
+import Footer from "@/components/layout/Footer"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -74,6 +74,7 @@ export default function RootLayout({
               <CartProvider>
                 <Header />
                 <main className="min-h-screen pt-16 bg-gray-50 dark:bg-gray-900">{children}</main>
+                <Footer />
                 <Toaster />
               </CartProvider>
             </AuthProvider>
