@@ -9,7 +9,6 @@ import { CHANGE_PASSWORD, UPDATE_PROFILE } from "@/graphql/mutation"
 import { GET_PROFILE } from "@/graphql/queries"
 import { ChangePasswordFormData, ProfileFormData } from "@/lib/validations"
 import { useToast } from "@/hooks/use-toast"
-import { client } from "@/lib/apollo-client"
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -75,6 +74,7 @@ export default function ProfilePage() {
               street: data.address.street,
               city: data.address.city,
               state: data.address.state,
+              country: data.address.country,
               zipCode: data.address.zipCode,
             },
           },

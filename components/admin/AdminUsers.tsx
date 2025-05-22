@@ -12,16 +12,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Search, UserPlus, UserX } from "lucide-react"
 import { useQuery, useMutation } from '@apollo/client'
 import { GET_USERS } from '../../graphql/queries'
 import { UPDATE_USER_STATUS, DELETE_USER, ADD_USER } from '../../graphql/mutation'
 import { User } from "@/types/user"
 import { useToast } from "@/hooks/use-toast"
-import { UserStatus } from "../../graphql/graphql-types"
+import UserForm from "./UserForm"
+import type { UserFormData } from "@/lib/validations"
 
 const statusColors = {
   ACTIVE: 'bg-green-100 text-green-800',
@@ -29,76 +28,19 @@ const statusColors = {
   DEACTIVATED: 'bg-red-100 text-red-800',
 }
 
-
 export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [openDialog, setOpenDialog] = useState(false)
-  const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    isAdmin: false,
-  })
-  const [formErrors, setFormErrors] = useState({
-    name: '',
-    email: '',
-    isAdmin: '',
-  })
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-
-  const resetForm = () => {
-    setNewUser({
-      name: '',
-      email: '',
-      isAdmin: false,
-    })
-    setFormErrors({
-      name: '',
-      email: '',
-      isAdmin: '',
-    })
-  }
 
   const { data, loading, error, refetch } = useQuery(GET_USERS)
   const [updateUserStatus] = useMutation(UPDATE_USER_STATUS)
-  const [deleteUser] = useMutation(DELETE_USER, {
-    onCompleted: () => {
-      toast({
-        title: "User Deleted",
-        description: "The user has been deleted successfully.",
-      })
-      refetch()
-      setIsDeleteDialogOpen(false)
-    },
-    onError: (error) => {
-      console.error('Error deleting user:', error)
-      toast({
-        title: "Error Deleting User",
-        description: error.message || "There was an error deleting the user. Please try again.",
-      })
-    },
-  })
-
-  const [addUser, { loading: addUserLoading }] = useMutation(ADD_USER, {
-    onCompleted: () => {
-      toast({
-        title: "User Added",
-        description: "The user has been added successfully.",
-      })
-      refetch()
-      setOpenDialog(false)
-      resetForm()
-    },
-    onError: (error) => {
-      console.error('Error adding user:', error)
-      toast({
-        title: "Error Adding User",
-        description: error.message || "There was an error adding the user. Please try again.",
-        variant: "destructive",
-      })
-    },
-  })
+  const [deleteUser] = useMutation(DELETE_USER)
+  const [addUser] = useMutation(ADD_USER)
 
   const handleStatusChange = async (userId: string, newStatus: string) => {
     try {
@@ -106,8 +48,16 @@ export default function AdminUsers() {
         variables: { id: userId, status: newStatus },
       })
       refetch()
-    } catch (error) {
-      console.error('Error updating user status:', error)
+      toast({
+        title: "Status Updated",
+        description: "User status has been updated successfully.",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "There was an error updating the user status.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -118,30 +68,73 @@ export default function AdminUsers() {
       await deleteUser({
         variables: { id: selectedUser.id },
       })
-    } catch (error: any) {
-      console.error('Error deleting user:', error)
       toast({
-        title: "Error Deleting User",
-        description: error.message || "There was an error deleting the user. Please try again.",
+        title: "User Deleted",
+        description: "The user has been deleted successfully.",
+      })
+      setIsDeleteDialogOpen(false)
+      refetch()
+    } catch (error: any) {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "There was an error deleting the user.",
         variant: "destructive",
       })
     }
   }
 
-  const handleAddUser = async () => {
-    console.log(newUser)
+  const handleAddUser = async (data: UserFormData) => {
+    setIsLoading(true)
     try {
       await addUser({
         variables: {
-          name: newUser.name,
-          email: newUser.email,
-          isAdmin: newUser.isAdmin,
+          name: data.name,
+          email: data.email,
+          isAdmin: data.isAdmin,
         },
       })
-      setOpenDialog(false)
+      toast({
+        title: "User Added",
+        description: "The user has been added successfully.",
+      })
+      setIsAddDialogOpen(false)
       refetch()
-    } catch (error) {
-      console.error('Error adding user:', error)
+    } catch (error: any) {
+      toast({
+        title: "Add Failed",
+        description: error.message || "There was an error adding the user.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditUser = async (data: UserFormData) => {
+    if (!selectedUser) return
+
+    setIsLoading(true)
+    try {
+      await updateUserStatus({
+        variables: {
+          id: selectedUser.id,
+          status: data.status,
+        },
+      })
+      toast({
+        title: "User Updated",
+        description: "The user has been updated successfully.",
+      })
+      setIsEditDialogOpen(false)
+      refetch()
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "There was an error updating the user.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -155,15 +148,14 @@ export default function AdminUsers() {
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  console.log(filteredUsers)
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900" />
       </div>
-    );
+    )
   }
+
   if (error) return <div>Error: {error.message}</div>
 
   return (
@@ -179,56 +171,13 @@ export default function AdminUsers() {
           />
         </div>
 
-        <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-red-600 hover:bg-red-700" disabled={addUserLoading}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              {addUserLoading ? "Adding..." : "Add User"}
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label>Name</Label>
-                <Input
-                  value={newUser.name}
-                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isAdmin"
-                  checked={newUser.isAdmin}
-                  onCheckedChange={(checked) =>
-                    setNewUser({ ...newUser, isAdmin: checked === true })
-                  }
-                />
-                <Label htmlFor="isAdmin">Is Admin</Label>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button onClick={handleAddUser} disabled={addUserLoading}>
-                {addUserLoading ? "Adding..." : "Add User"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={() => setIsAddDialogOpen(true)} 
+          className="bg-red-600 hover:bg-red-700"
+        >
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
       </div>
 
       <div className="border rounded-md">
@@ -266,15 +215,16 @@ export default function AdminUsers() {
                   <div className="flex gap-2 justify-end">
                     {user.role !== 'ADMIN' ? (
                       <>
-                        <select
-                          value={user.status}
-                          onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                          className="border rounded px-2 py-1"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user)
+                            setIsEditDialogOpen(true)
+                          }}
                         >
-                          <option value={UserStatus.Active}>Active</option>
-                          <option value={UserStatus.Inactive}>Inactive</option>
-                          <option value={UserStatus.Deactivated}>Deactivated</option>
-                        </select>
+                          Edit
+                        </Button>
                         <Button
                           variant="destructive"
                           size="sm"
@@ -283,12 +233,14 @@ export default function AdminUsers() {
                             setIsDeleteDialogOpen(true)
                           }}
                         >
-                          Delete
+                          <UserX className="h-4 w-4" />
                         </Button>
                       </>
-                    ) : <Button variant="secondary" size="sm" disabled>
-                      Administrator
-                    </Button>}
+                    ) : (
+                      <Button variant="secondary" size="sm" disabled>
+                        Administrator
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -304,6 +256,7 @@ export default function AdminUsers() {
         </Table>
       </div>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -312,14 +265,56 @@ export default function AdminUsers() {
               Are you sure you want to delete {selectedUser?.name}? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteUser}>
               Delete
             </Button>
-          </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Fill in the form below to add a new user.
+            </DialogDescription>
+          </DialogHeader>
+          <UserForm
+            onSubmit={handleAddUser}
+            isLoading={isLoading}
+            mode="create"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update the user information below.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <UserForm
+              onSubmit={handleEditUser}
+              isLoading={isLoading}
+              initialData={{
+                name: selectedUser.name,
+                email: selectedUser.email,
+                isAdmin: selectedUser.role === 'ADMIN',
+                status: selectedUser.status as "ACTIVE" | "INACTIVE" | "DEACTIVATED"
+              }}
+              mode="edit"
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

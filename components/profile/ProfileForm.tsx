@@ -25,6 +25,7 @@ interface ProfileFormProps {
       street: string
       city: string
       state: string
+      country: string
       zipCode: string
     }
   }
@@ -44,6 +45,7 @@ export default function ProfileForm({ onSubmit, isLoading, initialData }: Profil
         street: initialData?.address?.street || "",
         city: initialData?.address?.city || "",
         state: initialData?.address?.state || "",
+        country: initialData?.address?.country || "",
         zipCode: initialData?.address?.zipCode || "",
       },
     },
@@ -186,7 +188,7 @@ export default function ProfileForm({ onSubmit, isLoading, initialData }: Profil
                 <FormItem>
                   <FormLabel>City</FormLabel>
                   <FormControl>
-                    <Input placeholder="Mumbai" {...field} />
+                    <Input placeholder="Ahmedabad" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -200,13 +202,28 @@ export default function ProfileForm({ onSubmit, isLoading, initialData }: Profil
                 <FormItem>
                   <FormLabel>State</FormLabel>
                   <FormControl>
-                    <Input placeholder="Maharashtra" {...field} />
+                    <Input placeholder="Gujarat" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="address.country"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Country</FormLabel>
+                <FormControl>
+                  <Input placeholder="India" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -215,12 +232,13 @@ export default function ProfileForm({ onSubmit, isLoading, initialData }: Profil
               <FormItem>
                 <FormLabel>ZIP Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="400001" {...field} />
+                  <Input placeholder="000000" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          </div>
         </div>
 
         <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isLoading}>

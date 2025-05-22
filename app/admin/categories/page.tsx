@@ -2,75 +2,128 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { gql } from '@apollo/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { GET_CATEGORIES } from '@/graphql/queries';
 import { CREATE_CATEGORY, UPDATE_CATEGORY, DELETE_CATEGORY } from '@/graphql/mutation';
+import CategoryForm from '@/components/admin/CategoryForm';
+import Image from 'next/image';
+import { CategoryFormData } from '@/lib/validations';
 
 export default function CategoriesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    image: '',
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data, loading, refetch } = useQuery(GET_CATEGORIES);
+  const { data, loading, refetch } = useQuery(GET_CATEGORIES, {
+    fetchPolicy: 'cache-and-network',
+  });
   const [createCategory] = useMutation(CREATE_CATEGORY);
   const [updateCategory] = useMutation(UPDATE_CATEGORY);
   const [deleteCategory] = useMutation(DELETE_CATEGORY);
 
-  const { toast } = useToast()
+  const { toast } = useToast();
 
-  const handleCreate = async () => {
+  const handleCreate = async (data: CategoryFormData, imageFile: File | null) => {
+    setIsLoading(true);
     try {
+      let imageUrl = null;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const response = await fetch('/api/category/image', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers: {
+            'categoryId': data.name
+          }
+        });
+
+        if (!response.ok) throw new Error('Image upload failed');
+        const responseData = await response.json();
+        imageUrl = responseData.imageUrl;
+      }
+
       await createCategory({
         variables: {
-          input: formData,
+          input: {
+            name: data.name,
+            description: data.description,
+            image: imageUrl
+          },
         },
       });
+
       toast({
         title: 'Category created successfully',
       });
       setIsCreateDialogOpen(false);
-      setFormData({ name: '', description: '', image: '' });
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Failed to create category',
+        description: error?.message || 'Something went wrong',
+        variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (data: CategoryFormData, imageFile: File | null) => {
+    setIsLoading(true);
     try {
+      let imageUrl = selectedCategory.image;
+
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const response = await fetch('/api/category/image', {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers: {
+            'categoryId': data.name,
+            'Old-Image-Url': selectedCategory.image || ''
+          }
+        });
+
+        if (!response.ok) throw new Error('Image upload failed');
+        const responseData = await response.json();
+        imageUrl = responseData.imageUrl;
+      }
+
       await updateCategory({
         variables: {
           id: selectedCategory.id,
           input: {
-            name: formData.name,
-            description: formData.description,
-            image: formData.image
+            name: data.name,
+            description: data.description,
+            image: imageUrl
           }
         },
       });
+
       toast({
         title: 'Category updated successfully',
       });
       setIsEditDialogOpen(false);
-      setFormData({ name: '', description: '', image: '' });
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Failed to update category',
+        description: error?.message || 'Something went wrong',
+        variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -84,9 +137,11 @@ export default function CategoriesPage() {
           title: 'Category deleted successfully',
         });
         refetch();
-      } catch (error) {
+      } catch (error: any) {
         toast({
           title: 'Failed to delete category',
+          description: error?.message || 'Something went wrong',
+          variant: 'destructive',
         });
       }
     }
@@ -94,11 +149,6 @@ export default function CategoriesPage() {
 
   const handleEdit = (category: any) => {
     setSelectedCategory(category);
-    setFormData({
-      name: category.name,
-      description: category.description,
-      image: category.image,
-    });
     setIsEditDialogOpen(true);
   };
 
@@ -110,42 +160,6 @@ export default function CategoriesPage() {
     );
   }
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formDataFile = new FormData();
-    formDataFile.append('file', file);
-
-    try {
-
-      const response = await fetch('/api/category/image', {
-        method: 'POST',
-        body: formDataFile,
-        credentials: 'include',
-        headers: {
-          'categoryId': formData.name
-        }
-      });
-
-      if (!response.ok) throw new Error('Upload failed');
-      const data = await response.json();
-
-      setFormData({ ...formData, image: data.imageUrl as string })
-    //   setFormErrors({ ...formErrors, image: "" })
-
-      toast({
-        title: 'Product image updated successfully',
-        description: 'Product image updated successfully',
-      })
-    } catch {
-      toast({
-        title: 'Failed to upload image',
-        description: 'Failed to upload image',
-      })
-    }
-  };
-
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -154,46 +168,35 @@ export default function CategoriesPage() {
           <DialogTrigger asChild>
             <Button>Add Category</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Create New Category</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-              <Textarea
-                placeholder="Description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-              {formData.image && <img src={formData.image} alt="Preview" className="h-20 mt-2 rounded" />}
-              <Button onClick={handleCreate}>Create</Button>
-            </div>
+            <CategoryForm
+              onSubmit={handleCreate}
+              isLoading={isLoading}
+              mode="create"
+            />
           </DialogContent>
         </Dialog>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.categories.map((category: any) => (
-          <Card key={category.id}>
+          <Card key={category.id} className="overflow-hidden">
+            <div className="relative h-48 w-full">
+              <Image
+                src={category.image || '/default-category.jpg'}
+                alt={category.name}
+                fill
+                className="object-cover"
+              />
+            </div>
             <CardHeader>
               <CardTitle>{category.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-              <p className="text-gray-600 mb-4">{category.description}</p>
+              <p className="text-gray-600 mb-4 line-clamp-2">{category.description}</p>
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => handleEdit(category)}>
                   Edit
@@ -208,29 +211,18 @@ export default function CategoriesPage() {
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          {selectedCategory && (
+            <CategoryForm
+              onSubmit={handleUpdate}
+              isLoading={isLoading}
+              initialData={selectedCategory}
+              mode="edit"
             />
-            <Textarea
-              placeholder="Description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-            <Input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-              {formData.image && <img src={formData.image} alt="Preview" className="h-20 mt-2 rounded" />}
-            <Button onClick={handleUpdate}>Update</Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
