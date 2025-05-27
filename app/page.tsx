@@ -32,7 +32,7 @@ export default async function Home() {
           )
         ))}
 
-        <AIChatButton />
+        {/* <AIChatButton /> */}
       </div>
     );
   } catch (error) {

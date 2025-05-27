@@ -4,14 +4,14 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Plus, Minus, Trash2, ArrowRight, ShoppingBag } from "lucide-react"
+import { Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Separator } from "@/components/ui/separator"
-import { initializePayment } from "@/lib/payment"
 import { useMutation, gql } from "@apollo/client"
+import RazorpayButton from "@/components/RazorpayButton/Razorpaybutton"
 
 const CREATE_ORDER_MUTATION = gql`
   mutation CreateOrder(
@@ -63,19 +63,19 @@ export default function CartPage() {
       return
     }
 
+    if (!user.address) {
+      toast({
+        title: "Address Required",
+        description: "Please add an address and phone number to your profile",
+        variant: "destructive",
+      })
+      router.push("/profile")
+      return
+    }
+
     setIsProcessing(true)
 
     try {
-      if (!user.address) {
-        toast({
-          title: "Address Required",
-          description: "Please add an address and phone number to your profile",
-          variant: "destructive",
-        })
-        router.push("/profile")
-        return
-      }
-
       const shippingAddress = {
         fullName: user.name,
         address: user.address.street,
@@ -98,18 +98,17 @@ export default function CartPage() {
         variables: {
           orderItems,
           shippingAddress,
-          paymentMethod: "CARD",
+          paymentMethod: "RAZORPAY",
           totalAmount,
           shippingFee: deliveryFee,
         },
       })
 
       if (data?.createOrder) {
-        // Initialize payment
-        const paymentId = await initializePayment(totalAmount)
-
-        // Redirect to checkout page
-        router.push(`/checkout/${data.createOrder.id}?paymentId=${paymentId}`)
+        // Store order ID in localStorage for verification
+        localStorage.setItem('currentOrderId', data.createOrder.id)
+        setIsProcessing(false)
+        return true // Return true to indicate successful order creation
       } else {
         throw new Error("Failed to create order")
       }
@@ -121,7 +120,32 @@ export default function CartPage() {
         variant: "destructive",
       })
       setIsProcessing(false)
+      return false // Return false to indicate failed order creation
     }
+  }
+
+  const handlePaymentSuccess = async (response: any) => {
+    try {
+      // Update order status in database
+      const orderId = localStorage.getItem('currentOrderId')
+      if (orderId) {
+        // Here you would typically update the order status in your database
+        // await updateOrderStatus(orderId, 'paid', response.payment.id)
+        clearCart()
+        localStorage.removeItem('currentOrderId')
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error)
+    }
+  }
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment error:', error)
+    toast({
+      title: "Payment Failed",
+      description: "There was an error processing your payment. Please try again.",
+      variant: "destructive",
+    })
   }
 
   if (cart.length === 0) {
@@ -267,14 +291,20 @@ export default function CartPage() {
               )}
             </div>
 
-            <Button
-              className="w-full mt-6 bg-red-600 hover:bg-red-700"
-              onClick={handleCheckout}
-              disabled={isProcessing}
-            >
-              {isProcessing ? "Processing..." : "Proceed to Checkout"}
-              {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
-            </Button>
+            {isProcessing ? (
+              <Button
+                className="w-full mt-6 bg-red-600 hover:bg-red-700"
+                disabled
+              >
+                Processing...
+              </Button>
+            ) : (
+              <RazorpayButton
+                totalAmount={totalAmount}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
 
             <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
               <p>We accept:</p>
