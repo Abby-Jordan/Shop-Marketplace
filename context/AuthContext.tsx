@@ -102,8 +102,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           path: "/",
         })
 
-        // Set the user in state
-        setUser(data.login.user)
+        // Fetch complete user profile
+        const { data: profileData } = await refetch()
+        
+        // Set the complete user data in state
+        if (profileData?.me) {
+          setUser(profileData.me)
+        } else {
+          setUser(data.login.user)
+        }
       }
     } finally {
       setIsLoading(false)

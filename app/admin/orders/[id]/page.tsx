@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/utils"
 import { OrderStatus, PaymentStatus } from "../../../../graphql/graphql-types"
 import { useRouter } from "next/navigation"
 import { ORDER_DETAILS_QUERY } from "@/graphql/queries"
+import Image from "next/image"
 
 export default function OrderDetailsPage() {
   const params = useParams()
@@ -48,7 +49,7 @@ export default function OrderDetailsPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.back()}
+          onClick={() => router.push('/admin?tab=orders')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Orders
@@ -79,7 +80,7 @@ export default function OrderDetailsPage() {
                   order.status === OrderStatus.Pending ? "secondary" :
                   order.status === OrderStatus.Processing ? "default" :
                   order.status === OrderStatus.Shipped ? "outline" :
-                  order.status === OrderStatus.Delivered ? "default" :
+                  order.status === OrderStatus.Delivered ? "success" :
                   "destructive"
                 }>
                   {order.status}
@@ -89,7 +90,7 @@ export default function OrderDetailsPage() {
                 <p className="text-sm text-gray-500">Payment Status</p>
                 <Badge variant={
                   order.paymentStatus === PaymentStatus.Pending ? "secondary" :
-                  order.paymentStatus === PaymentStatus.Paid ? "default" :
+                  order.paymentStatus === PaymentStatus.Paid ? "success" :
                   order.paymentStatus === PaymentStatus.Failed ? "destructive" :
                   "outline"
                 }>
@@ -118,7 +119,7 @@ export default function OrderDetailsPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Phone</p>
-              <p className="font-medium">{order.user.phone || "Not provided"}</p>
+              <p className="font-medium">{order.user.phoneNumber || "Not provided"}</p>
             </div>
           </CardContent>
         </Card>
@@ -179,9 +180,9 @@ export default function OrderDetailsPage() {
             {order.orderItems.map((item: any) => (
               <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg">
                 <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-                  {item.product.images?.[0] && (
+                  {item.product.image && (
                     <img
-                      src={item.product.images[0]}
+                      src={item.product.image}
                       alt={item.product.name}
                       className="w-full h-full object-cover"
                     />

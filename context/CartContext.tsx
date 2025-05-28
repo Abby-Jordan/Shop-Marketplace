@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Product, ProductSize } from "@/types/product"
+import { useAuth } from "./AuthContext"
 
 export interface CartItem extends Product {
   quantity: number
@@ -12,7 +13,7 @@ interface CartContextType {
   cart: CartItem[]
   addToCart: (product: Product, size?: ProductSize | null) => void
   removeFromCart: (productId: string, sizeValue?: string, removeAll?: boolean) => void
-  clearCart: () => void
+  clearCart: (isLogout?: boolean) => void
   getItemQuantity: (productId: string, sizeValue?: string) => number
   getCartTotal: () => number
 }
@@ -21,23 +22,57 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([])
+  const { user } = useAuth()
 
-  // Load cart from localStorage on initial render
+  // Load cart from localStorage on initial render and when user changes
   useEffect(() => {
-    const savedCart = localStorage.getItem("cart")
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart))
-      } catch (error) {
-        console.error("Failed to parse cart from localStorage:", error)
+    if (user) {
+      // Load user's cart
+      const userCart = localStorage.getItem(`cart_${user.id}`)
+      if (userCart) {
+        try {
+          setCart(JSON.parse(userCart))
+        } catch (error) {
+          console.error("Failed to parse user cart from localStorage:", error)
+        }
+      } else {
+        // If no user cart exists, check for guest cart
+        const guestCart = localStorage.getItem("guest_cart")
+        if (guestCart) {
+          try {
+            setCart(JSON.parse(guestCart))
+            // Save guest cart as user cart
+            localStorage.setItem(`cart_${user.id}`, guestCart)
+            // Clear guest cart
+            localStorage.removeItem("guest_cart")
+          } catch (error) {
+            console.error("Failed to parse guest cart from localStorage:", error)
+          }
+        }
+      }
+    } else {
+      // Load guest cart
+      const guestCart = localStorage.getItem("guest_cart")
+      if (guestCart) {
+        try {
+          setCart(JSON.parse(guestCart))
+        } catch (error) {
+          console.error("Failed to parse guest cart from localStorage:", error)
+        }
+      } else {
+        setCart([])
       }
     }
-  }, [])
+  }, [user])
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart))
-  }, [cart])
+    if (user) {
+      localStorage.setItem(`cart_${user.id}`, JSON.stringify(cart))
+    } else {
+      localStorage.setItem("guest_cart", JSON.stringify(cart))
+    }
+  }, [cart, user])
 
   const addToCart = (product: Product, size?: ProductSize | null) => {
     setCart((prevCart) => {
@@ -87,9 +122,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const clearCart = () => {
-    setCart([])
+  const clearCart = (isLogout = false) => {
+    if (isLogout && !user) {
+      // Only clear guest cart on logout
+      localStorage.removeItem("guest_cart")
+      setCart([])
+    } else if (!isLogout) {
+      // Clear cart explicitly (e.g., after order complete)
+      setCart([])
+      if (user) {
+        localStorage.removeItem(`cart_${user.id}`)
+      } else {
+        localStorage.removeItem("guest_cart")
+      }
+    }
   }
+  
 
   const getItemQuantity = (productId: string, sizeValue?: string) => {
     const item = cart.find(

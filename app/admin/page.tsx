@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/AuthContext"
 import AdminProducts from "@/components/admin/AdminProducts"
@@ -13,7 +13,9 @@ import { Role } from "../../graphql/graphql-types"
 export default function AdminPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isClient, setIsClient] = useState(false)
+  const defaultTab = searchParams.get('tab') || 'dashboard'
 
   useEffect(() => {
     setIsClient(true)
@@ -41,7 +43,7 @@ export default function AdminPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-      <Tabs defaultValue="dashboard" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-8">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>

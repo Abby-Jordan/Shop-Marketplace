@@ -3,7 +3,7 @@
 import { useQuery, gql } from "@apollo/client"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Package, Truck, CheckCircle, XCircle, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,46 +11,36 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatDate } from "@/lib/utils"
 import { OrderStatus, PaymentStatus } from "../../../graphql/graphql-types"
+import { useAuth } from "@/context/AuthContext"
+import { useParams, useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { ORDER_QUERY } from "@/graphql/queries"
 
-const ORDER_QUERY = gql`
-  query Order($id: ID!) {
-    order(id: $id) {
-      id
-      status
-      totalAmount
-      shippingFee
-      shippingAddress
-      paymentMethod
-      paymentStatus
-      createdAt
-      updatedAt
-      orderItems {
-        id
-        quantity
-        price
-        size
-        product {
-          id
-          name
-          image
-        }
-      }
-    }
-  }
-`
-
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage() {
+  const params = useParams()
   const { id } = params
+  const { user } = useAuth()
+  const router = useRouter()
+
   const { data, loading, error } = useQuery(ORDER_QUERY, {
     variables: { id },
+    fetchPolicy: "network-only",
   })
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/auth?redirect=/orders")
+    }
+  }, [user, router])
 
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Orders
+          <Button variant="ghost" className="mb-4" asChild>
+            <Link href="/orders">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Orders
+            </Link>
           </Button>
           <Skeleton className="h-8 w-64 mb-2" />
           <Skeleton className="h-4 w-48" />
@@ -131,6 +121,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         </div>
         <Card>
           <CardContent className="py-8 text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-red-600 mb-4">Error loading order details. Please try again later.</p>
             <Button onClick={() => window.location.reload()}>Retry</Button>
           </CardContent>
@@ -153,6 +144,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         </div>
         <Card>
           <CardContent className="py-8 text-center">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">Order not found.</p>
             <Button className="bg-red-600 hover:bg-red-700" asChild>
               <Link href="/orders">View All Orders</Link>
@@ -195,6 +187,23 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  const getStatusIcon = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.Pending:
+        return <Package className="h-5 w-5" />
+      case OrderStatus.Processing:
+        return <Package className="h-5 w-5" />
+      case OrderStatus.Shipped:
+        return <Truck className="h-5 w-5" />
+      case OrderStatus.Delivered:
+        return <CheckCircle className="h-5 w-5" />
+      case OrderStatus.Cancelled:
+        return <XCircle className="h-5 w-5" />
+      default:
+        return <Package className="h-5 w-5" />
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -203,8 +212,16 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Orders
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Order #{order.id.slice(-6)}</h1>
-        <p className="text-gray-600 dark:text-gray-400">Placed on {formatDate(order.createdAt)}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Order #{order.id.slice(-6)}</h1>
+            <p className="text-gray-600 dark:text-gray-400">Placed on {formatDate(order.createdAt)}</p>
+          </div>
+          <Badge className={`${getStatusColor(order.status)} px-4 py-2 flex items-center gap-2`}>
+            {getStatusIcon(order.status)}
+            {order.status}
+          </Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -214,10 +231,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <CardTitle>Order Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {order.orderItems.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  <div key={item.id} className="flex items-start gap-4 pb-4 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
+                    <div className="relative h-20 w-20 rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
                       <Image
                         src={item.product.image || "/placeholder.svg?height=100&width=100"}
                         alt={item.product.name}
@@ -226,14 +243,50 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.product.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {item.size && `Size: ${item.size}`} • Qty: {item.quantity} • ₹{item.price} each
-                      </p>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{item.product.name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Category: {item.product.category.name}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {item.size && `Size: ${item.size}`} • Qty: {item.quantity}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₹{item.price * item.quantity}</p>
+                          {item.product.discountedPrice && (
+                            <p className="text-sm text-gray-500 line-through">
+                              ₹{item.product.price * item.quantity}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="font-medium">₹{item.price * item.quantity}</div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-gray-500" />
+                  <div>
+                    <p className="font-medium">{order.user.name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{order.user.email}</p>
+                    {order.user.phoneNumber && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Phone: {order.user.phoneNumber}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -287,12 +340,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Status</span>
-                  <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-400">Payment</span>
+                  <span className="text-gray-600 dark:text-gray-400">Payment Status</span>
                   <Badge className={getPaymentStatusColor(order.paymentStatus)}>{order.paymentStatus}</Badge>
                 </div>
 
@@ -310,7 +358,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           </Card>
 
           <Button className="w-full bg-red-600 hover:bg-red-700" asChild>
-            <Link href={`mailto:support@shreemahakalidairy.com?subject=Order%20${order.id.slice(-6)}`}>
+            <Link href={`mailto:support@shreemahakalidairy.com?subject=Order%20${order.id}`}>
               Contact Support
             </Link>
           </Button>

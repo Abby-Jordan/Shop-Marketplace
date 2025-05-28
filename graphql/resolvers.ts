@@ -201,7 +201,11 @@ export const resolvers = {
           user: true,
           orderItems: {
             include: {
-              product: true,
+              product: {
+                include: {
+                  category: true
+                }
+              }
             },
           },
         },
@@ -230,7 +234,11 @@ export const resolvers = {
         include: {
           orderItems: {
             include: {
-              product: true,
+              product: {
+                include: {
+                  category: true
+                }
+              }
             },
           },
         },
@@ -830,23 +838,21 @@ export const resolvers = {
       })
     },
 
-    updateOrderStatus: async (_: ResolverParent, { id, status }: { id: string; status: OrderStatus }, context: Context) => {
-      const currentUser = await getCurrentUser()
-      if (!currentUser || currentUser.role !== GraphQLRole.Admin) {
+    updateOrderStatus: async (
+      _: any,
+      { id, status }: { id: string; status: OrderStatus },
+      { prisma, user }: Context
+    ) => {
+      if (!user || user.role !== GraphQLRole.Admin) {
         throw new Error("Not authorized")
       }
 
-      return prisma.order.update({
+      const order = await prisma.order.update({
         where: { id },
         data: { status },
-        include: {
-          orderItems: {
-            include: {
-              product: true,
-            },
-          },
-        },
       })
+
+      return order
     },
 
     updatePaymentStatus: async (_: ResolverParent, { id, status }: { id: string; status: PaymentStatus }, context: Context) => {

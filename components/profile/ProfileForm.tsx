@@ -33,6 +33,7 @@ interface ProfileFormProps {
 
 export default function ProfileForm({ onSubmit, isLoading, initialData }: ProfileFormProps) {
   const [previewImage, setPreviewImage] = useState<string | null>(initialData?.profileImage || null)
+  console.log({previewImage})
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
 
   const form = useForm<ProfileFormData>({

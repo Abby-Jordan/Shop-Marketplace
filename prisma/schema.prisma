@@ -137,6 +137,7 @@ model Order {
   updatedAt       DateTime      @updatedAt @map("updated_at")
   orderItems      OrderItem[]
   user            User          @relation(fields: [userId], references: [id])
+  payment         Payment?
 
   @@map("orders")
 }
@@ -163,6 +164,22 @@ model UserActivity {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_activities")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  orderId           String   @unique @map("order_id")
+  razorpayOrderId   String   @map("razorpay_order_id")
+  razorpayPaymentId String   @map("razorpay_payment_id")
+  razorpaySignature String   @map("razorpay_signature")
+  amount            Float
+  currency          String   @default("INR")
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  order             Order    @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
 }
 
 enum Role {

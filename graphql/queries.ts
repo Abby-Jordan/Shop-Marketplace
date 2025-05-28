@@ -185,3 +185,49 @@ query GetCategories {
     }
   }
 `;
+
+export const ORDER_QUERY = gql`
+  query Order($id: ID!) {
+    order(id: $id) {
+      id
+      status
+      totalAmount
+      shippingFee
+      paymentMethod
+      paymentStatus
+      createdAt
+      updatedAt
+      user {
+        id
+        name
+        email
+        phoneNumber
+      }
+      orderItems {
+        id
+        quantity
+        price
+        size
+        product {
+          id
+          name
+          image
+          price
+          discountedPrice
+          category {
+            name
+            id
+          }
+        }
+      }
+      shippingAddress {
+        address
+        city
+        fullName
+        phone
+        postalCode
+        state
+      }
+    }
+  }
+`

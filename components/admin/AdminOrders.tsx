@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useQuery, gql } from "@apollo/client"
+import { useQuery, gql, useMutation } from "@apollo/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -12,12 +12,71 @@ import { OrderStatus, PaymentStatus } from "../../graphql/graphql-types"
 import { formatDate } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { ORDERS_QUERY } from "@/graphql/queries"
+import { UPDATE_ORDER_STATUS } from "@/graphql/mutation"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const router = useRouter()
-  const { data, loading, error } = useQuery(ORDERS_QUERY)
+  const { data, loading, error, refetch } = useQuery(ORDERS_QUERY)
+  const [updateOrderStatus] = useMutation(UPDATE_ORDER_STATUS)
+  const { toast } = useToast()
+
+  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    try {
+      await updateOrderStatus({
+        variables: {
+          id: orderId,
+          status: newStatus,
+        },
+      })
+
+      toast({
+        title: "Status Updated",
+        description: "Order status has been updated successfully.",
+      })
+
+      // Refetch orders to get updated data
+      refetch()
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update order status. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const getStatusColor = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.Pending:
+        return "secondary"
+      case OrderStatus.Processing:
+        return "default"
+      case OrderStatus.Shipped:
+        return "outline"
+      case OrderStatus.Delivered:
+        return "success"
+      case OrderStatus.Cancelled:
+        return "destructive"
+      default:
+        return "default"
+    }
+  }
+
+  const getPaymentStatusColor = (status: PaymentStatus) => {
+    switch (status) {
+      case PaymentStatus.Pending:
+        return "secondary"
+      case PaymentStatus.Paid:
+        return "success"
+      case PaymentStatus.Failed:
+        return "destructive"
+      default:
+        return "default"
+    }
+  }
 
   if (loading) {
     return (
@@ -114,25 +173,31 @@ export default function AdminOrders() {
                 <TableCell>{order.orderItems.length} items</TableCell>
                 <TableCell>₹{(order.totalAmount + order.shippingFee).toFixed(2)}</TableCell>
                 <TableCell>
-                  <Badge variant={
-                    order.status === OrderStatus.Pending ? "secondary" :
-                    order.status === OrderStatus.Processing ? "default" :
-                    order.status === OrderStatus.Shipped ? "outline" :
-                    order.status === OrderStatus.Delivered ? "default" :
-                    "destructive"
-                  }>
+                  <Badge variant={getStatusColor(order.status)}>
                     {order.status}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={
-                    order.paymentStatus === PaymentStatus.Pending ? "secondary" :
-                    order.paymentStatus === PaymentStatus.Paid ? "default" :
-                    order.paymentStatus === PaymentStatus.Failed ? "destructive" :
-                    "outline"
-                  }>
+                  <Badge variant={getPaymentStatusColor(order.paymentStatus)}>
                     {order.paymentStatus}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    defaultValue={order.status}
+                    onValueChange={(value) => handleStatusChange(order.id, value as OrderStatus)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={OrderStatus.Pending}>Pending</SelectItem>
+                      <SelectItem value={OrderStatus.Processing}>Processing</SelectItem>
+                      <SelectItem value={OrderStatus.Shipped}>Shipped</SelectItem>
+                      <SelectItem value={OrderStatus.Delivered}>Delivered</SelectItem>
+                      <SelectItem value={OrderStatus.Cancelled}>Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <Button 

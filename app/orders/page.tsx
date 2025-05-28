@@ -136,7 +136,7 @@ export default function OrdersPage() {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                   <div>
-                    <CardTitle>Order #{order.id.slice(-6)}</CardTitle>
+                    <CardTitle>Order #{order.id}</CardTitle>
                     <CardDescription>Placed on {formatDate(order.createdAt)}</CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">

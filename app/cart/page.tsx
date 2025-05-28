@@ -52,90 +52,103 @@ export default function CartPage() {
   const deliveryFee = cartTotal > 500 ? 0 : 40
   const totalAmount = cartTotal + deliveryFee
 
-  const handleCheckout = async () => {
-    if (!user) {
-      toast({
-        title: "Login Required",
-        description: "Please login to continue with checkout",
-        variant: "destructive",
-      })
-      router.push("/auth?redirect=/cart")
-      return
-    }
+  // Create order items from cart
+  const orderItems = cart.map((item) => ({
+    productId: item.id,
+    quantity: item.quantity,
+    price: item.size ? item.size.price : item.discountedPrice || item.price,
+    size: item.size?.value,
+  }))
 
-    if (!user.address) {
-      toast({
-        title: "Address Required",
-        description: "Please add an address and phone number to your profile",
-        variant: "destructive",
-      })
-      router.push("/profile")
-      return
-    }
+  // const handleCheckout = async () => {
+  //   if (!user) {
+  //     toast({
+  //       title: "Login Required",
+  //       description: "Please login to continue with checkout",
+  //       variant: "destructive",
+  //     })
+  //     router.push("/auth?redirect=/cart")
+  //     return
+  //   }
 
-    setIsProcessing(true)
+  //   if (!user.address) {
+  //     toast({
+  //       title: "Address Required",
+  //       description: "Please add an address and phone number to your profile",
+  //       variant: "destructive",
+  //     })
+  //     router.push("/profile")
+  //     return
+  //   }
 
-    try {
-      const shippingAddress = {
-        fullName: user.name,
-        address: user.address.street,
-        city: user.address.city,
-        state: user.address.state,
-        postalCode: user.address.zipCode,
-        phone: user.phoneNumber,
-      }
+  //   setIsProcessing(true)
 
-      // Create order items from cart
-      const orderItems = cart.map((item) => ({
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.size ? item.size.price : item.discountedPrice || item.price,
-        size: item.size?.value,
-      }))
+  //   try {
+  //     const shippingAddress = {
+  //       fullName: user.name,
+  //       address: user.address.street,
+  //       city: user.address.city,
+  //       state: user.address.state,
+  //       postalCode: user.address.zipCode,
+  //       phone: user.phoneNumber,
+  //     }
 
-      // Create the order in the database
-      const { data } = await createOrder({
-        variables: {
-          orderItems,
-          shippingAddress,
-          paymentMethod: "RAZORPAY",
-          totalAmount,
-          shippingFee: deliveryFee,
-        },
-      })
+  //     // Create the order in the database
+  //     const { data } = await createOrder({
+  //       variables: {
+  //         orderItems,
+  //         shippingAddress,
+  //         paymentMethod: "RAZORPAY",
+  //         totalAmount,
+  //         shippingFee: deliveryFee,
+  //       },
+  //     })
 
-      if (data?.createOrder) {
-        // Store order ID in localStorage for verification
-        localStorage.setItem('currentOrderId', data.createOrder.id)
-        setIsProcessing(false)
-        return true // Return true to indicate successful order creation
-      } else {
-        throw new Error("Failed to create order")
-      }
-    } catch (error) {
-      console.error("Checkout error:", error)
-      toast({
-        title: "Checkout Failed",
-        description: "There was an error processing your checkout. Please try again.",
-        variant: "destructive",
-      })
-      setIsProcessing(false)
-      return false // Return false to indicate failed order creation
-    }
-  }
+  //     if (data?.createOrder) {
+  //       // Store order ID in localStorage for verification
+  //       localStorage.setItem('currentOrderId', data.createOrder.id)
+  //       setIsProcessing(false)
+  //       return true // Return true to indicate successful order creation
+  //     } else {
+  //       throw new Error("Failed to create order")
+  //     }
+  //   } catch (error) {
+  //     console.error("Checkout error:", error)
+  //     toast({
+  //       title: "Checkout Failed",
+  //       description: "There was an error processing your checkout. Please try again.",
+  //       variant: "destructive",
+  //     })
+  //     setIsProcessing(false)
+  //     return false // Return false to indicate failed order creation
+  //   }
+  // }
 
   const handlePaymentSuccess = async (response: any) => {
     try {
       // Update order status in database
       const orderId = localStorage.getItem('currentOrderId')
       if (orderId) {
-        // Here you would typically update the order status in your database
-        // await updateOrderStatus(orderId, 'paid', response.payment.id)
+        // Clear the cart
         clearCart()
+        // Remove the order ID from localStorage
         localStorage.removeItem('currentOrderId')
+        // Show success toast
+        toast({
+          title: "Payment Successful",
+          description: "Your order has been placed successfully!",
+          variant: "default",
+        })
+        // Redirect to orders page
+        router.push('/orders')
       }
     } catch (error) {
       console.error('Error updating order status:', error)
+      toast({
+        title: "Error",
+        description: "There was an error processing your order. Please contact support.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -303,6 +316,8 @@ export default function CartPage() {
                 totalAmount={totalAmount}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
+                orderItems={orderItems}
+                deliveryFee={deliveryFee}
               />
             )}
 
