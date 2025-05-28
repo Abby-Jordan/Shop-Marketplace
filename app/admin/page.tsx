@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/AuthContext"
@@ -10,7 +10,7 @@ import AdminUsers from "@/components/admin/AdminUsers"
 import AdminDashboard from "@/components/admin/AdminDashboard"
 import { Role } from "../../graphql/graphql-types"
 
-export default function AdminPage() {
+function AdminContent() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -68,5 +68,17 @@ export default function AdminPage() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-16 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+      </div>
+    }>
+      <AdminContent />
+    </Suspense>
   )
 }
